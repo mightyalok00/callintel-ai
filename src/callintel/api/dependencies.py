@@ -83,7 +83,12 @@ def verify_api_key(
     """
     from src.callintel.core.config import settings
     if settings.require_auth or settings.api_key:
-        expected = settings.api_key or "sk_callintel_demo_2026"
+        expected = settings.api_key
+        if not expected:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication is enabled but no API key is configured.",
+            )
         token = x_api_key
         if not token and authorization:
             if authorization.startswith("Bearer "):
