@@ -25,11 +25,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import (
     roc_auc_score,
-    precision_recall_curve,
-    auc,
     classification_report,
     confusion_matrix,
     brier_score_loss,
@@ -117,7 +114,7 @@ def evaluate_churn_models() -> Dict[str, Any]:
 
     print(f"[+] Total Records: {total_records:,}")
     print(f"[+] Class Imbalance: Retained={neg_count:,} ({neg_count/total_records:.1%}), Churned={pos_count:,} ({prevalence:.1%})")
-    print(f"[+] Positive Class Prevalence (Random PR-AUC Baseline): {prevalence:.4f}")
+    print(f"[+] Positive Class Prevalence (constant-score AP baseline): {prevalence:.4f}")
 
     # Stratified 80/20 train/test split
     X_train, X_test, y_train, y_test = train_test_split(
@@ -523,16 +520,16 @@ def generate_markdown_report(churn_eval: Dict[str, Any], meld_eval: Dict[str, An
     md.append(f"- **Class Distribution**:")
     md.append(f"  - Retained (0): `{imb['class_0_retained']:,}` ({1 - imb['churn_rate']:.1%})")
     md.append(f"  - Churned (1): `{imb['class_1_churned']:,}` ({imb['churn_rate']:.1%})")
-    md.append(f"- **Class Imbalance Handling**: `scale_pos_weight = {imb['scale_pos_weight']}` in XGBoost loss, paired with PR-AUC evaluation to prevent true-negative skew.")
+    md.append(f"- **Class Imbalance Handling**: `scale_pos_weight = {imb['scale_pos_weight']}` in XGBoost loss, paired with average-precision (AP) evaluation to account for class imbalance.")
     md.append("")
     md.append("### 1.2 Baseline Comparisons on Identical Test Split")
     md.append("")
-    md.append("| Model Architecture | ROC-AUC | PR-AUC | Brier Score | ECE | F1 Score | Description |")
+    md.append("| Model Architecture | ROC-AUC | Average Precision (AP) | Brier Score | ECE | F1 Score | Description |")
     md.append("| :--- | :---: | :---: | :---: | :---: | :---: | :--- |")
     for b in churn_eval["baseline_comparison"]:
         md.append(f"| **{b['model']}** | `{b['roc_auc']:.4f}` | `{b['pr_auc']:.4f}` | `{b['brier_score']:.4f}` | `{b['ece']:.4f}` | `{b['f1_score']:.4f}` | {b['description']} |")
     md.append("")
-    md.append(f"> **Key Finding**: Production XGBoost delivers **`{churn_eval['production_xgboost_metrics']['pr_auc']:.4f}` PR-AUC**, achieving a **`+{churn_eval['production_xgboost_metrics']['pr_auc_lift_over_baseline']:.4f}` lift** over the random prevalence baseline (`{imb['churn_rate']:.4f}`). Platt scaling achieves lowest Brier score calibration.")
+    md.append(f"> **Key Finding**: Production XGBoost delivers **`{churn_eval['production_xgboost_metrics']['pr_auc']:.4f}` average precision (AP)**, achieving a **`+{churn_eval['production_xgboost_metrics']['pr_auc_lift_over_baseline']:.4f}` lift** over the random prevalence baseline (`{imb['churn_rate']:.4f}`). Platt scaling achieves lowest Brier score calibration.")
     md.append("")
     md.append("### 1.3 Probability Calibration & Reliability Analysis")
     md.append("")
