@@ -116,9 +116,13 @@ class CallAnalysisService:
         pending = sum(1 for c in calls if c.status in ["PENDING", "PROCESSING"])
 
         avg_churn = 0.0
-        completed_calls = [c for c in calls if c.status == "COMPLETED" and c.churn_risk_score is not None]
-        if completed_calls:
-            avg_churn = round(sum(c.churn_risk_score for c in completed_calls) / len(completed_calls), 3)
+        completed_scores: List[float] = [
+            float(c.churn_risk_score)
+            for c in calls
+            if c.status == "COMPLETED" and c.churn_risk_score is not None
+        ]
+        if completed_scores:
+            avg_churn = round(sum(completed_scores) / len(completed_scores), 3)
 
         return {
             "total_calls": total,
