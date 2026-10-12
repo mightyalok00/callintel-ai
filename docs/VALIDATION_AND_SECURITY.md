@@ -75,7 +75,7 @@ The environment loader also supports CALLINTEL_DATABASE_URL, CALLINTEL_UPLOAD_DI
 
 Before deployment:
 
-1. Enable authentication and test missing, invalid, and valid credentials on upload, read, delete, analytics, and WebSocket routes.
+1. Enable authentication and test missing, invalid, and valid credentials on upload, read, delete, analytics, and WebSocket routes. The current WebSocket guard accepts API-key or bearer headers; the native browser WebSocket API cannot set arbitrary headers, so browser clients need a trusted backend/proxy or a designed short-lived session-token flow. Do not put long-lived API keys in query strings.
 2. Restrict CORS to the exact trusted frontend origins. Avoid wildcard origins for production.
 3. Put the API behind HTTPS/TLS and a trusted reverse proxy; restrict network ingress and rate-limit upload and analysis endpoints.
 4. Apply tenant/user authorization to each call ID. An API key alone is not row-level authorization for a multi-user deployment.
