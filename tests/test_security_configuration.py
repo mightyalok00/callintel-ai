@@ -4,7 +4,7 @@ import pytest
 from fastapi import HTTPException
 
 from src.callintel.api.dependencies import verify_api_key
-from src.callintel.core.config import settings
+from src.callintel.core.config import load_settings_from_environment, settings
 
 
 def test_auth_enabled_without_key_fails_closed(monkeypatch):
@@ -32,3 +32,22 @@ def test_invalid_api_key_is_rejected(monkeypatch):
         verify_api_key(x_api_key="wrong", authorization=None)
 
     assert exc_info.value.status_code == 401
+
+
+
+def test_environment_loader_reads_auth_and_cors_settings(monkeypatch):
+    monkeypatch.setenv("CALLINTEL_REQUIRE_AUTH", "true")
+    monkeypatch.setenv("CALLINTEL_API_KEY", "environment-test-secret")
+    monkeypatch.setenv(
+        "CALLINTEL_CORS_ORIGINS",
+        "https://dashboard.example.com,https://admin.example.com",
+    )
+
+    loaded = load_settings_from_environment()
+
+    assert loaded.require_auth is True
+    assert loaded.api_key == "environment-test-secret"
+    assert loaded.cors_origins == [
+        "https://dashboard.example.com",
+        "https://admin.example.com",
+    ]
