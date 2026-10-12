@@ -1,0 +1,56 @@
+{
+  "train": {
+    "total_utterances": 9989,
+    "total_dialogues": 1038,
+    "emotions": {
+      "neutral": 4710,
+      "surprise": 1205,
+      "fear": 268,
+      "sadness": 683,
+      "joy": 1743,
+      "disgust": 271,
+      "anger": 1109
+    },
+    "sentiments": {
+      "neutral": 4710,
+      "positive": 2334,
+      "negative": 2945
+    }
+  },
+  "dev": {
+    "total_utterances": 1109,
+    "total_dialogues": 114,
+    "emotions": {
+      "sadness": 111,
+      "surprise": 150,
+      "neutral": 470,
+      "joy": 163,
+      "anger": 153,
+      "disgust": 22,
+      "fear": 40
+    },
+    "sentiments": {
+      "negative": 406,
+      "neutral": 470,
+      "positive": 233
+    }
+  },
+  "test": {
+    "total_utterances": 2610,
+    "total_dialogues": 280,
+    "emotions": {
+      "surprise": 281,
+      "anger": 345,
+      "neutral": 1256,
+      "joy": 402,
+      "sadness": 208,
+      "fear": 50,
+      "disgust": 68
+    },
+    "sentiments": {
+      "positive": 521,
+      "negative": 833,
+      "neutral": 1256
+    }
+  }
+}

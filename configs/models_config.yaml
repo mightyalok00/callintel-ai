@@ -1,0 +1,23 @@
+# Machine Learning & Speech Model Configuration
+
+speech:
+  model_size: "base"           # Whisper model size: tiny, base, small, medium
+  device: "cpu"                # Device: cpu or cuda
+  compute_type: "int8"         # Precision: int8, float16, float32
+  beam_size: 5
+  vad_filter: true
+  min_silence_duration_ms: 500
+
+emotion_sentiment:
+  dataset_source: "D:\\MELD-master\\data\\MELD"
+  model_path: "models/emotion_pipeline.joblib"
+  sentiment_path: "models/sentiment_pipeline.joblib"
+  confidence_threshold: 0.30
+
+churn_prediction:
+  dataset_path: "data/churn/bank_churn_cleaned.csv"
+  model_path: "models/churn_xgb_pipeline.joblib"
+  explainer_path: "models/churn_shap_explainer.joblib"
+  critical_risk_threshold: 0.75
+  elevated_risk_threshold: 0.50
+  moderate_risk_threshold: 0.25
