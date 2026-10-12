@@ -60,22 +60,23 @@ async def upload_call_audio(
     Uploads a recorded customer call (WAV/MP3) for asynchronous intelligence processing.
     Returns 202 Accepted with poll URL.
     """
-    if not file.filename.lower().endswith((".wav", ".mp3", ".ogg", ".flac")):
+    if not file.filename or not file.filename.lower().endswith((".wav", ".mp3", ".ogg", ".flac")):
         raise HTTPException(status_code=400, detail="Invalid audio format. Supported: .wav, .mp3, .ogg, .flac")
 
+    safe_filename: str = file.filename
     call_id = f"CALL_{uuid.uuid4().hex[:10].upper()}"
-    save_path = settings.upload_dir / f"{call_id}_{file.filename}"
+    save_path = settings.upload_dir / f"{call_id}_{safe_filename}"
 
     with open(save_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    service.create_pending_call(call_id=call_id, filename=file.filename)
+    service.create_pending_call(call_id=call_id, filename=safe_filename)
     background_tasks.add_task(run_pipeline_worker, call_id, save_path)
 
     return CallUploadResponse(
         call_id=call_id,
         status="PENDING",
-        filename=file.filename,
+        filename=safe_filename,
         poll_url=f"/api/v1/calls/{call_id}",
     )
 
