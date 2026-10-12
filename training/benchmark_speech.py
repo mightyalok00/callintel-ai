@@ -305,7 +305,7 @@ def run_benchmark():
         hyp_text = asr_result["full_transcript"]
         wer, wer_details = compute_wer(call_info["reference_text"], hyp_text)
 
-        # 2. Evaluate DER
+        # 2. Evaluate text-aligned speaker attribution proxy (not DER)
         der_metrics = compute_der(call_info["turns"], asr_result["turns"])
 
         # 3. Evaluate Automatic Speaker Discovery (k* estimation without prior)
@@ -401,8 +401,8 @@ Diarizer: `AcousticDiarizer (34-dim acoustic vector: F0 pitch, 13 MFCC means & s
 
 > [!NOTE]
 > **Controlled Benchmark Fixture vs In-the-Wild Telephony**:
-> On clean multi-speaker synthetic test fixtures with distinct speaker timbres, acoustic clustering achieves $< 1.0\\%$ WER and low DER. Under additive background noise ($+15$dB SNR) and fast technical speech exchanges, error rates rise realistically to reflect acoustic degradation.
-> In unconstrained, low-bitrate real-world telephony (e.g. 8kHz G.711 PSTN with overlapping speech and packet jitter), lightweight acoustic clustering DER typically ranges between $8\\%$ and $20\\%$. The `AcousticDiarizer` serves as an efficient edge CPU feature-clustering solution, with downstream Evidence Ledger validation gates enforcing verification before production escalation.
+ > Controlled fixtures can be useful for regression checks, but they do not establish real-world telephony performance. DER is not measured because reference turns have no timestamps.
+ > Do not compare the text-overlap speaker-attribution proxy with published DER targets.
 
 ---
 
