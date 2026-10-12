@@ -982,6 +982,7 @@ elif nav_option == "🏥 Model Health & Benchmark Suite":
     st.caption("Trained on 165,031 records (80/20 stratified split, zero data leakage, tree-based preprocessing).")
 
     ml_report_file = REPORTS_DIR / "ml_evaluation_benchmark.json"
+    ml_data = {}
     if ml_report_file.exists():
         with open(ml_report_file, "r", encoding="utf-8") as f:
             ml_data = json.load(f)
@@ -1062,7 +1063,7 @@ elif nav_option == "🏥 Model Health & Benchmark Suite":
     st.markdown("</div>", unsafe_allow_html=True)
 
     # 3. MELD Emotion & Sentiment Multimodal Ablation
-    meld_eval = ml_data.get("meld_emotion_evaluation", {}) if ml_report_file.exists() else {}
+    meld_eval = ml_data.get("meld_emotion_evaluation", {})
     if meld_eval:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
