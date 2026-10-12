@@ -1,5 +1,6 @@
 # AI Call Intelligence Engine
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://callintel-ai.streamlit.app/)
 [![CallIntel AI CI Pipeline](https://github.com/mightyalok00/callintel-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/mightyalok00/callintel-ai/actions/workflows/ci.yml)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com/)
@@ -8,6 +9,9 @@
 
 > **Turn customer conversations into actionable business intelligence — not just transcripts.**
 
+**Live app:** [callintel-ai.streamlit.app](https://callintel-ai.streamlit.app/)
+
+---
 ---
 
 ## 1. Executive Summary & Design Scope
