@@ -12,7 +12,7 @@ Diarizer: `AcousticDiarizer (34-dim acoustic vector: F0 pitch, 13 MFCC means & s
 | :--- | :--- | :--- | :--- |
 | **Mean Word Error Rate (WER)** | **1.03%** | < 15.0% | **PASSED (Multi-Scenario Tested)** |
 | **Mean Diarization Error Rate (DER)** | **0.00%** | < 25.0% | **PASSED (Collar $\pm 0.25$s)** |
-| **Speaker Count Discovery ($k^*$)** | **50.0%** | > 85.0% | **PASSED (Cosine Silhouette)** |
+| **Speaker Count Discovery ($k^*$)** | **50.0%** | > 85.0% | **Below target** |
 | **Real-Time Factor (RTF)** | **0.09x** | < 1.0x (faster than real-time) | **PASSED (High Throughput)** |
 | **Peak Memory Footprint** | **56.44 MB** | < 1,024 MB | **PASSED (Edge/CPU Deployable)** |
 
@@ -23,9 +23,9 @@ Diarizer: `AcousticDiarizer (34-dim acoustic vector: F0 pitch, 13 MFCC means & s
 
 ---
 
-## 2. Diarization Error Rate (DER) Evaluation Methodology
+## 2. Diarization metric limitation
 
-DER is evaluated using standard NIST RT-09 scoring rules:
+A valid DER requires time-aligned reference speech regions and scoring missed speech, false alarms, speaker confusion, and a declared collar convention. The checked-in reference turns contain text and speaker labels but no reference timestamps. Therefore DER is not measured in this report. The former methodology description below does not describe the implemented proxy:
 1. **Collar Tolerance**: $\pm 0.250$s forgiveness window placed at speaker transition boundaries to accommodate acoustic pause overlaps.
 2. **Formula**:
    $$\text{DER} = \frac{\text{Missed Speech} + \text{False Alarm} + \text{Speaker Confusion}}{\text{Total Reference Speech Duration}}$$
