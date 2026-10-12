@@ -90,5 +90,8 @@ class WhisperTranscriber:
             "language_probability": round(float(info.language_probability), 3),
             "total_turns": len(turns),
             "speakers_detected": sorted(list({t["speaker_cluster_id"] for t in turns})),
+            "full_transcript": " ".join(t.get("utterance", "") for t in turns),
             "turns": turns,
         }
+
+    transcribe = transcribe_file

@@ -10,9 +10,9 @@ from src.callintel.db.models import CallRecord, SessionLocal
 class CallRepository:
     """Manages database operations for call transcripts and intelligence reports."""
 
-    def __init__(self, db_session: Optional[Session] = None):
+    def __init__(self, db: Optional[Session] = None, db_session: Optional[Session] = None):
         self._session_factory = SessionLocal
-        self._db = db_session
+        self._db = db or db_session
 
     def _get_db(self) -> Session:
         return self._db or self._session_factory()
@@ -28,6 +28,8 @@ class CallRepository:
     def get_by_id(self, call_id: str) -> Optional[CallRecord]:
         db = self._get_db()
         return db.query(CallRecord).filter(CallRecord.call_id == call_id).first()
+
+    get_call_by_id = get_by_id
 
     def list_calls(self, limit: int = 50, offset: int = 0) -> List[CallRecord]:
         db = self._get_db()

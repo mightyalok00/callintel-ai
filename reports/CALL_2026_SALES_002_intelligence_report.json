@@ -15,6 +15,84 @@
   "objections": [
     "That fits our budget and security requirements perfectly."
   ],
+  "findings": [
+    {
+      "claim_id": "FND_CHURN_RISK_01",
+      "claim": "No explicit cancellation threats detected; customer churn risk is stable.",
+      "category": "CHURN_RISK",
+      "evidence_status": "SUPPORTED",
+      "supporting_segment_ids": [
+        0
+      ],
+      "supporting_timestamps": [
+        "00:00:00.000 - 00:00:02.720"
+      ],
+      "verbatim_citations": [
+        "Hello, welcome to Apex Cloud Sales."
+      ],
+      "confidence_score": 0.8,
+      "confidence_rationale": "Evaluated transcript turns; no cancellation triggers identified.",
+      "recommended_action": "Maintain standard service relationship.",
+      "validator_notes": "Verified: 1 valid segment(s) with confirmed quote alignment."
+    },
+    {
+      "claim_id": "FND_PRICING_OBJ_01",
+      "claim": "Customer expressed dissatisfaction regarding recent pricing increase or billing rates.",
+      "category": "PRICING_OBJECTION",
+      "evidence_status": "SUPPORTED",
+      "supporting_segment_ids": [
+        11
+      ],
+      "supporting_timestamps": [
+        "00:00:42.640 - 00:00:45.760"
+      ],
+      "verbatim_citations": [
+        "That fits our budget and security requirements perfectly."
+      ],
+      "confidence_score": 0.89,
+      "confidence_rationale": "Grounded in customer cost objections extracted in evidence ledger.",
+      "recommended_action": "Provide annual contract discount or loyalty tier rate lock.",
+      "validator_notes": "Verified: 1 valid segment(s) with confirmed quote alignment."
+    },
+    {
+      "claim_id": "FND_QA_COMPL_01",
+      "claim": "Quality assurance protocol score evaluated at 40.0%. Status: NEEDS_COACHING.",
+      "category": "COMPLIANCE_GAP",
+      "evidence_status": "SUPPORTED",
+      "supporting_segment_ids": [
+        0
+      ],
+      "supporting_timestamps": [
+        "00:00:00.000 - 00:00:02.720"
+      ],
+      "verbatim_citations": [
+        "Hello, welcome to Apex Cloud Sales."
+      ],
+      "confidence_score": 0.95,
+      "confidence_rationale": "Rule-based checklist verification against greeting, empathy, and disclosure criteria.",
+      "recommended_action": "Initiate agent compliance coaching.",
+      "validator_notes": "Verified: 1 valid segment(s) with confirmed quote alignment."
+    },
+    {
+      "claim_id": "FND_SENTIMENT_01",
+      "claim": "Overall interaction tone evaluated as 'mixed' with 2 negative turn(s).",
+      "category": "CUSTOMER_SENTIMENT",
+      "evidence_status": "SUPPORTED",
+      "supporting_segment_ids": [
+        0
+      ],
+      "supporting_timestamps": [
+        "00:00:00.000 - 00:00:02.720"
+      ],
+      "verbatim_citations": [
+        "Hello, welcome to Apex Cloud Sales."
+      ],
+      "confidence_score": 0.86,
+      "confidence_rationale": "Acoustic and lexical sentiment progression evaluated over conversational turns.",
+      "recommended_action": "Monitor customer satisfaction feedback loop.",
+      "validator_notes": "Verified: 1 valid segment(s) with confirmed quote alignment."
+    }
+  ],
   "evidence_ledger": [
     {
       "turn_id": 0,
@@ -264,6 +342,13 @@
       "team",
       "priority",
       "support"
-    ]
+    ],
+    "evidence_audit": {
+      "total_findings": 4,
+      "supported_count": 4,
+      "insufficient_count": 0,
+      "contradicted_count": 0,
+      "grounding_pass_rate": 1.0
+    }
   }
 }

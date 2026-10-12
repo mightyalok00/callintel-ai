@@ -9,7 +9,7 @@ on:
 
 jobs:
   test:
-    name: Unit & Integration Tests (Python 3.12)
+    name: Test & Benchmark Suite (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -38,8 +38,20 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
 
-      - name: Run Pytest Suite
+      - name: Run Full Pytest Test Suite
         env:
           PYTHONPATH: .
         run: |
-          python -m pytest tests/unit/ tests/api/ -v --tb=short
+          python -m pytest tests/ -v --tb=short
+
+      - name: Verify ML Benchmark Reproducibility
+        env:
+          PYTHONPATH: .
+        run: |
+          python training/evaluate_ml_models.py
+
+      - name: Verify Speech & Diarization Benchmark
+        env:
+          PYTHONPATH: .
+        run: |
+          python training/benchmark_speech.py

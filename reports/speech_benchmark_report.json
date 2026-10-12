@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-10-12 17:19:23",
+  "whisper_model": "base",
+  "acoustic_features": "34-dim (F0 pitch, 13 MFCC means/stds, centroid, rolloff, RMS)",
+  "summary": {
+    "mean_wer": 0.005,
+    "mean_der": 0.0,
+    "mean_rtf": 0.107,
+    "mean_peak_memory_mb": 61.92,
+    "total_calls_benchmarked": 2
+  },
+  "calls": [
+    {
+      "call_id": "CALL_2026_APEX_001",
+      "filename": "sample_customer_call.wav",
+      "scenario": "Customer Retention (Pricing & Cancellation Threat)",
+      "audio_duration_seconds": 45.93,
+      "processing_time_seconds": 6.38,
+      "real_time_factor_rtf": 0.139,
+      "peak_memory_mb": 66.01,
+      "wer": 0.01,
+      "wer_breakdown": {
+        "substitutions": 0,
+        "deletions": 1,
+        "insertions": 0,
+        "ref_words": 100
+      },
+      "der": 0.0,
+      "der_details": {
+        "der": 0.0,
+        "speaker_error_rate": 0.0,
+        "missed_speech_rate": 0.0,
+        "false_alarm_rate": 0.0,
+        "total_speech_seconds": 39.12,
+        "speaker_error_seconds": 0.0,
+        "mapped_speakers": {
+          "Customer": "Customer",
+          "Agent": "Agent"
+        },
+        "collar_seconds": 0.25
+      },
+      "detected_turns": 9,
+      "reference_turns": 6
+    },
+    {
+      "call_id": "CALL_2026_SALES_002",
+      "filename": "sample_sales_expansion.wav",
+      "scenario": "Sales Expansion (Enterprise Tier & Buying Signals)",
+      "audio_duration_seconds": 49.75,
+      "processing_time_seconds": 3.73,
+      "real_time_factor_rtf": 0.075,
+      "peak_memory_mb": 57.82,
+      "wer": 0.0,
+      "wer_breakdown": {
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "ref_words": 100
+      },
+      "der": 0.0,
+      "der_details": {
+        "der": 0.0,
+        "speaker_error_rate": 0.0,
+        "missed_speech_rate": 0.0,
+        "false_alarm_rate": 0.0,
+        "total_speech_seconds": 40.24,
+        "speaker_error_seconds": 0.0,
+        "mapped_speakers": {
+          "Agent": "Agent",
+          "Customer": "Customer"
+        },
+        "collar_seconds": 0.25
+      },
+      "detected_turns": 13,
+      "reference_turns": 6
+    }
+  ]
+}

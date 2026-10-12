@@ -1,19 +1,23 @@
 """
 Analytics endpoints for cross-call telemetry and contact center metrics.
+Uses Dependency Injection with CallAnalysisService.
 """
 
 from typing import Dict, Any
-from fastapi import APIRouter
-from src.callintel.db.repository import CallRepository
+from fastapi import APIRouter, Depends
+
+from src.callintel.services.call_analysis_service import CallAnalysisService
+from src.callintel.api.dependencies import get_call_analysis_service
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics & Telemetry"])
-repo = CallRepository()
 
 
 @router.get("/overview")
-async def get_analytics_overview():
+async def get_analytics_overview(
+    service: CallAnalysisService = Depends(get_call_analysis_service),
+):
     """Returns aggregated contact-center KPIs, churn distributions, and compliance rates."""
-    calls = repo.list_calls(limit=100)
+    calls = service.list_calls(limit=100)
     total_calls = len(calls)
 
     if total_calls == 0:

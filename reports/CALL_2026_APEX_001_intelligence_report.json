@@ -16,6 +16,115 @@
     "I might cancel my subscription if the price increases again.",
     "I completely understand your pricing concerns."
   ],
+  "findings": [
+    {
+      "claim_id": "FND_CHURN_RISK_01",
+      "claim": "Caller explicitly stated cancellation or termination intention during dialogue.",
+      "category": "CHURN_RISK",
+      "evidence_status": "SUPPORTED",
+      "supporting_segment_ids": [
+        3
+      ],
+      "supporting_timestamps": [
+        "00:00:13.440 - 00:00:16.640"
+      ],
+      "verbatim_citations": [
+        "I might cancel my subscription if the price increases again."
+      ],
+      "confidence_score": 0.92,
+      "confidence_rationale": "Grounded in explicit cancellation phrase matches and validated risk tier.",
+      "recommended_action": "Execute immediate loyalty retention outreach and fee freeze offer.",
+      "validator_notes": "Verified: 1 valid segment(s) with confirmed quote alignment."
+    },
+    {
+      "claim_id": "FND_PRICING_OBJ_01",
+      "claim": "Customer expressed dissatisfaction regarding recent pricing increase or billing rates.",
+      "category": "PRICING_OBJECTION",
+      "evidence_status": "SUPPORTED",
+      "supporting_segment_ids": [
+        2,
+        3,
+        4
+      ],
+      "supporting_timestamps": [
+        "00:00:08.240 - 00:00:12.640",
+        "00:00:13.440 - 00:00:16.640",
+        "00:00:17.520 - 00:00:20.240"
+      ],
+      "verbatim_citations": [
+        "Hi Alex. Your product is good, but it is too expensive.",
+        "I might cancel my subscription if the price increases again.",
+        "I completely understand your pricing concerns."
+      ],
+      "confidence_score": 0.89,
+      "confidence_rationale": "Grounded in customer cost objections extracted in evidence ledger.",
+      "recommended_action": "Provide annual contract discount or loyalty tier rate lock.",
+      "validator_notes": "Verified: 3 valid segment(s) with confirmed quote alignment."
+    },
+    {
+      "claim_id": "FND_AGENT_COMM_01",
+      "claim": "Agent presented resolution terms and discount concessions to customer.",
+      "category": "AGENT_COMMITMENT",
+      "evidence_status": "SUPPORTED",
+      "supporting_segment_ids": [
+        5,
+        6,
+        7
+      ],
+      "supporting_timestamps": [
+        "00:00:21.120 - 00:00:25.040",
+        "00:00:25.840 - 00:00:31.680",
+        "00:00:32.640 - 00:00:38.160"
+      ],
+      "verbatim_citations": [
+        "Let me review your current usage and explain our discount plan options.",
+        "Okay, please do. If you have an annual discount, I would like to consider staying.",
+        "Wonderful. I can apply a 15% loyalty discount to your account starting today."
+      ],
+      "confidence_score": 0.91,
+      "confidence_rationale": "Agent verbal commitment detected during resolution stage.",
+      "recommended_action": "Send automated written confirmation of discount addendum.",
+      "validator_notes": "Verified: 3 valid segment(s) with confirmed quote alignment."
+    },
+    {
+      "claim_id": "FND_QA_COMPL_01",
+      "claim": "Quality assurance protocol score evaluated at 100.0%. Status: PASSED.",
+      "category": "COMPLIANCE_GAP",
+      "evidence_status": "SUPPORTED",
+      "supporting_segment_ids": [
+        0
+      ],
+      "supporting_timestamps": [
+        "00:00:00.000 - 00:00:03.200"
+      ],
+      "verbatim_citations": [
+        "Hello, thank you for calling APEX Cloud Support."
+      ],
+      "confidence_score": 0.95,
+      "confidence_rationale": "Rule-based checklist verification against greeting, empathy, and disclosure criteria.",
+      "recommended_action": "Log QA audit pass.",
+      "validator_notes": "Verified: 1 valid segment(s) with confirmed quote alignment."
+    },
+    {
+      "claim_id": "FND_SENTIMENT_01",
+      "claim": "Overall interaction tone evaluated as 'mixed' with 1 negative turn(s).",
+      "category": "CUSTOMER_SENTIMENT",
+      "evidence_status": "SUPPORTED",
+      "supporting_segment_ids": [
+        0
+      ],
+      "supporting_timestamps": [
+        "00:00:00.000 - 00:00:03.200"
+      ],
+      "verbatim_citations": [
+        "Hello, thank you for calling APEX Cloud Support."
+      ],
+      "confidence_score": 0.86,
+      "confidence_rationale": "Acoustic and lexical sentiment progression evaluated over conversational turns.",
+      "recommended_action": "Monitor customer satisfaction feedback loop.",
+      "validator_notes": "Verified: 1 valid segment(s) with confirmed quote alignment."
+    }
+  ],
   "evidence_ledger": [
     {
       "turn_id": 0,
@@ -264,6 +373,13 @@
       "alex",
       "today",
       "subscription"
-    ]
+    ],
+    "evidence_audit": {
+      "total_findings": 5,
+      "supported_count": 5,
+      "insufficient_count": 0,
+      "contradicted_count": 0,
+      "grounding_pass_rate": 1.0
+    }
   }
 }
