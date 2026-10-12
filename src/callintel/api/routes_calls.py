@@ -122,9 +122,11 @@ def cleanup_runtime_artifacts(call_id: Optional[str] = None) -> int:
                 elif call_id:
                     should_delete = bool(token.search(artifact.name))
                 else:
-                    # Shared reports/caches without a call ID are intentionally
-                    # retained because ownership cannot be established safely.
-                    should_delete = False
+                    # During history deletion, remove artifacts that identify a
+                    # CallIntel call ID while preserving shared benchmark outputs.
+                    should_delete = bool(
+                        re.search(r"(^|[^A-Za-z0-9])CALL_[A-Z0-9]{6,}([^A-Za-z0-9]|$)", artifact.name, re.IGNORECASE)
+                    )
                 if not should_delete:
                     continue
                 try:
