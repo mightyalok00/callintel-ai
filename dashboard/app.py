@@ -4,10 +4,13 @@ Modern glassmorphic interface with interactive multi-dimensional filters, Plotly
 """
 
 import sys
-sys.path.insert(0, ".")
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 import json
-from pathlib import Path
 import streamlit as st
 import plotly.express as px
 

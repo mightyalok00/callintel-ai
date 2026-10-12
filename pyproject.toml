@@ -28,10 +28,16 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["src*", "dashboard*"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-v --tb=short"
+
+[tool.pyrefly]
+search-path = ["."]
+
+[tool.pyright]
+extraPaths = ["."]
