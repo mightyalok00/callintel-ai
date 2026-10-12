@@ -14,7 +14,7 @@
 | Account-level bank churn | 33,007-row stratified test split from 165,031 account records | XGBoost ROC-AUC **0.8808**, PR-AUC **0.7109**, F1 **0.6331** | Beats the 0.5 ROC-AUC ranking baseline and the churn prevalence of **0.2116** as a PR reference; see the PR-AUC note below |
 | MELD 7-class emotion | 2,610 utterances / 280 dialogues | Accuracy **0.4785**, macro-F1 **0.3334**, weighted-F1 **0.4835** | Accuracy is **below** the neutral-majority baseline of 0.4812; macro-F1 improves the view beyond majority accuracy but minority classes remain weak |
 | MELD 3-class sentiment | Same 2,610 utterance test set | Accuracy **0.5268**, macro-F1 **0.5063**, weighted-F1 **0.5301** | Accuracy is 4.56 percentage points above the 0.4812 majority baseline |
-| Speech transcription / diarization | 4 controlled sample calls | Mean WER **1.03%**, reported DER **0.00%**, mean RTF **0.090x** | Fixture-only result. Automatic speaker-count discovery was correct on only **2 of 4** calls (50%); do not infer real-call performance |
+| Speech transcription / diarization | 4 controlled sample calls | Mean WER **1.03%**, DER **not measured** (reference timestamps are missing), mean RTF **0.090x** | Fixture-only result. DER cannot be calculated from the available untimed reference turns. Speaker-count discovery was correct on only **2 of 4** calls (50%); do not infer real-call performance |
 
 ## 1. Reproduction
 
