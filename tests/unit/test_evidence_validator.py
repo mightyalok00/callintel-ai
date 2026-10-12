@@ -349,3 +349,71 @@ def test_validator_audit_summary(sample_turns):
     assert audit["supported_count"] == 1
     assert audit["insufficient_count"] == 1
     assert audit["grounding_pass_rate"] == 0.5
+
+
+
+def test_validator_rejects_paraphrased_cancellation_as_acceptance(sample_turns):
+    validator = EvidenceValidator()
+    finding = AgentFinding(
+        claim_id="FND_PARAPHRASED_CONTRADICTION",
+        claim="Customer agreed to stay and accepted the retention offer.",
+        category=FindingCategory.CHURN_RISK,
+        evidence_status=EvidenceStatus.SUPPORTED,
+        supporting_segment_ids=[1],
+        supporting_timestamps=["00:00:05.000 - 00:00:10.200"],
+        verbatim_citations=[],
+        confidence_score=0.91,
+        confidence_rationale="Paraphrased summary of the conversation.",
+        recommended_action="Close the retention case.",
+    )
+
+    validated = validator.validate_finding(finding, sample_turns)
+
+    assert validated.evidence_status == EvidenceStatus.CONTRADICTED
+    assert validated.confidence_score == 0.0
+    assert "Contradiction detected" in (validated.validator_notes or "")
+
+
+def test_validator_rejects_wrong_speaker_attribution(sample_turns):
+    validator = EvidenceValidator()
+    finding = AgentFinding(
+        claim_id="FND_WRONG_SPEAKER",
+        claim="Customer said the agent offered a fifteen percent loyalty discount.",
+        category=FindingCategory.AGENT_COMMITMENT,
+        evidence_status=EvidenceStatus.SUPPORTED,
+        supporting_segment_ids=[2],
+        supporting_timestamps=["00:00:11.000 - 00:00:16.800"],
+        verbatim_citations=[],
+        confidence_score=0.88,
+        confidence_rationale="Summary generated from cited turn.",
+        recommended_action="Confirm the discount.",
+    )
+
+    validated = validator.validate_finding(finding, sample_turns)
+
+    assert validated.evidence_status == EvidenceStatus.CONTRADICTED
+    assert validated.confidence_score == 0.0
+    assert "Speaker attribution mismatch" in (validated.validator_notes or "")
+
+
+def test_validator_abstains_on_unsupported_high_impact_recommendation(sample_turns):
+    validator = EvidenceValidator()
+    finding = AgentFinding(
+        claim_id="FND_UNSUPPORTED_RECOMMENDATION",
+        claim="Customer requested cancellation because the bill increased.",
+        category=FindingCategory.CHURN_RISK,
+        evidence_status=EvidenceStatus.SUPPORTED,
+        supporting_segment_ids=[1],
+        supporting_timestamps=["00:00:05.000 - 00:00:10.200"],
+        verbatim_citations=[],
+        confidence_score=0.88,
+        confidence_rationale="Customer explicitly described billing concern and cancellation.",
+        recommended_action="Escalate a security breach to incident response.",
+    )
+
+    validated = validator.validate_finding(finding, sample_turns)
+
+    assert validated.evidence_status == EvidenceStatus.INSUFFICIENT
+    assert validated.confidence_score == 0.0
+    assert "Unsupported recommendation" in (validated.validator_notes or "")
+    assert "Abstain" in (validated.recommended_action or "")
