@@ -385,9 +385,15 @@ def evaluate_churn_models() -> Dict[str, Any]:
 
 
 def evaluate_meld_models() -> Dict[str, Any]:
-    print("\n" + "="*70)
-    print("STEP 2: EVALUATING MELD CONVERSATIONAL EMOTION CLASSIFIER")
-    print("="*70)
+    """Evaluate MELD text-only models without leaking ground-truth labels into features.
+
+    MELD's checked-in split contains utterance text and labels, but this evaluation
+    path does not load aligned audio features. Acoustic fusion is therefore marked
+    unavailable instead of fabricating pitch/energy values from the true emotion.
+    """
+    print("\\n" + "=" * 70)
+    print("STEP 2: EVALUATING MELD CONVERSATIONAL EMOTION CLASSIFIER (TEXT ONLY)")
+    print("=" * 70)
 
     classifier = MeldClassifier()
     if not classifier.is_ready:
@@ -402,125 +408,94 @@ def evaluate_meld_models() -> Dict[str, Any]:
     with open(test_file, "r", encoding="utf-8") as f:
         dialogues = json.load(f)
 
-    y_true_emotion = []
-    y_pred_lex_emotion = []
-    y_pred_multi_emotion = []
-    y_true_sentiment = []
-    y_pred_lex_sentiment = []
-    y_pred_multi_sentiment = []
-
-    for d_id, turns in dialogues.items():
-        turns_sorted = sorted(turns, key=lambda x: x.get("utterance_id", 0))
-        for turn in turns_sorted:
+    y_true_emotion, y_pred_emotion = [], []
+    y_true_sentiment, y_pred_sentiment = [], []
+    for _, turns in dialogues.items():
+        for turn in sorted(turns, key=lambda x: x.get("utterance_id", 0)):
             text = turn.get("utterance", "").strip()
             if not text:
                 continue
             true_emo = turn.get("emotion", "neutral").lower()
             true_sent = turn.get("sentiment", "neutral").lower()
-
-            # 1. Lexical prediction
-            pred_lex = classifier.predict_turn(utterance=text, speaker=turn.get("speaker", "Other"))
-
-            # 2. Multimodal prediction with prosodic cues
-            mock_pitch = 245.0 if true_emo in ["anger", "joy", "surprise"] else (135.0 if true_emo in ["sadness"] else 165.0)
-            mock_centroid = 2850.0 if true_emo in ["anger", "joy"] else 1850.0
-            mock_voiced = 0.85 if true_emo not in ["sadness"] else 0.50
-            mock_energy = 0.08 if true_emo in ["anger", "joy"] else 0.03
-
-            pred_multi = classifier.predict_turn_multimodal(
+            prediction = classifier.predict_turn(
                 utterance=text,
                 speaker=turn.get("speaker", "Other"),
-                acoustic_metrics={
-                    "mean_pitch_hz": mock_pitch,
-                    "spectral_centroid_hz": mock_centroid,
-                    "voiced_ratio": mock_voiced,
-                    "rms_energy": mock_energy,
-                },
             )
-
             y_true_emotion.append(true_emo)
-            y_pred_lex_emotion.append(pred_lex["emotion"]["label"])
-            y_pred_multi_emotion.append(pred_multi["emotion"]["label"])
-
+            y_pred_emotion.append(prediction["emotion"]["label"].lower())
             y_true_sentiment.append(true_sent)
-            y_pred_lex_sentiment.append(pred_lex["sentiment"]["label"])
-            y_pred_multi_sentiment.append(pred_multi["sentiment"]["label"])
+            y_pred_sentiment.append(prediction["sentiment"]["label"].lower())
 
-    emo_labels = sorted(list(set(y_true_emotion)))
-    sent_labels = sorted(list(set(y_true_sentiment)))
+    if not y_true_emotion:
+        raise ValueError(f"No non-empty utterances found in {test_file}")
 
-    # Emotion class distribution
+    emo_labels = sorted(set(y_true_emotion))
+    sent_labels = sorted(set(y_true_sentiment))
     emo_counts = pd.Series(y_true_emotion).value_counts().to_dict()
-    majority_emo = max(emo_counts.keys(), key=lambda k: emo_counts[k])
-    majority_acc = emo_counts[majority_emo] / len(y_true_emotion)
+    majority_emo = max(emo_counts, key=emo_counts.get)
+    majority_acc = float(emo_counts[majority_emo] / len(y_true_emotion))
 
-    # Lexical metrics
-    emo_lex_acc = float(accuracy_score(y_true_emotion, y_pred_lex_emotion))
-    emo_lex_macro_f1 = float(f1_score(y_true_emotion, y_pred_lex_emotion, average="macro"))
-    emo_lex_weighted_f1 = float(f1_score(y_true_emotion, y_pred_lex_emotion, average="weighted"))
+    emo_acc = float(accuracy_score(y_true_emotion, y_pred_emotion))
+    emo_macro_f1 = float(f1_score(y_true_emotion, y_pred_emotion, average="macro", zero_division=0))
+    emo_weighted_f1 = float(f1_score(y_true_emotion, y_pred_emotion, average="weighted", zero_division=0))
+    sent_acc = float(accuracy_score(y_true_sentiment, y_pred_sentiment))
+    sent_macro_f1 = float(f1_score(y_true_sentiment, y_pred_sentiment, average="macro", zero_division=0))
+    sent_weighted_f1 = float(f1_score(y_true_sentiment, y_pred_sentiment, average="weighted", zero_division=0))
 
-    # Multimodal metrics
-    emo_multi_acc = float(accuracy_score(y_true_emotion, y_pred_multi_emotion))
-    emo_multi_macro_f1 = float(f1_score(y_true_emotion, y_pred_multi_emotion, average="macro"))
-    emo_multi_weighted_f1 = float(f1_score(y_true_emotion, y_pred_multi_emotion, average="weighted"))
+    emotion_text_only = {
+        "accuracy": round(emo_acc, 4),
+        "macro_f1": round(emo_macro_f1, 4),
+        "weighted_f1": round(emo_weighted_f1, 4),
+    }
+    sentiment_text_only = {
+        "accuracy": round(sent_acc, 4),
+        "macro_f1": round(sent_macro_f1, 4),
+        "weighted_f1": round(sent_weighted_f1, 4),
+    }
+    unavailable_fusion = {
+        "available": False,
+        "reason": "No aligned audio features are loaded for MELD evaluation. Synthetic acoustic values derived from the true emotion label are intentionally not used.",
+    }
+    print(f"[MELD] Text-only emotion accuracy={emo_acc:.4f}, macro-F1={emo_macro_f1:.4f}; majority baseline={majority_acc:.4f}")
+    print(f"[MELD] Text-only sentiment accuracy={sent_acc:.4f}, macro-F1={sent_macro_f1:.4f}")
 
-    sent_lex_acc = float(accuracy_score(y_true_sentiment, y_pred_lex_sentiment))
-    sent_lex_macro_f1 = float(f1_score(y_true_sentiment, y_pred_lex_sentiment, average="macro"))
-    sent_lex_weighted_f1 = float(f1_score(y_true_sentiment, y_pred_lex_sentiment, average="weighted"))
-
-    sent_multi_acc = float(accuracy_score(y_true_sentiment, y_pred_multi_sentiment))
-    sent_multi_macro_f1 = float(f1_score(y_true_sentiment, y_pred_multi_sentiment, average="macro"))
-    sent_multi_weighted_f1 = float(f1_score(y_true_sentiment, y_pred_multi_sentiment, average="weighted"))
-
-    meld_results = {
+    return {
+        "evaluation_mode": "text_only_no_label_derived_acoustic_features",
         "dataset_split": {
             "test_turns": len(y_true_emotion),
             "test_dialogues": len(dialogues),
-            "class_imbalance": {k: {"count": v, "percentage": round(v / len(y_true_emotion) * 100, 2)} for k, v in emo_counts.items()},
+            "class_imbalance": {
+                k: {"count": int(v), "percentage": round(v / len(y_true_emotion) * 100, 2)}
+                for k, v in emo_counts.items()
+            },
         },
         "emotion_evaluation": {
             "majority_baseline_accuracy": round(majority_acc, 4),
             "majority_baseline_class": majority_emo,
-            "lexical_text_only": {
-                "accuracy": round(emo_lex_acc, 4),
-                "macro_f1": round(emo_lex_macro_f1, 4),
-                "weighted_f1": round(emo_lex_weighted_f1, 4),
-            },
-            "multimodal_acoustic_fused": {
-                "accuracy": round(emo_multi_acc, 4),
-                "macro_f1": round(emo_multi_macro_f1, 4),
-                "weighted_f1": round(emo_multi_weighted_f1, 4),
-                "fusion_weights": {"text": 0.75, "acoustic": 0.25},
-            },
-            # Primary legacy keys for backward compatibility
-            "accuracy": round(emo_multi_acc, 4),
-            "macro_f1": round(emo_multi_macro_f1, 4),
-            "weighted_f1": round(emo_multi_weighted_f1, 4),
-            "classification_report": classification_report(y_true_emotion, y_pred_multi_emotion, output_dict=True),
+            "lexical_text_only": emotion_text_only,
+            "multimodal_acoustic_fused": unavailable_fusion,
+            "accuracy": emotion_text_only["accuracy"],
+            "macro_f1": emotion_text_only["macro_f1"],
+            "weighted_f1": emotion_text_only["weighted_f1"],
+            "classification_report": classification_report(
+                y_true_emotion, y_pred_emotion, labels=emo_labels, output_dict=True, zero_division=0
+            ),
             "confusion_matrix": {
                 "labels": emo_labels,
-                "matrix": confusion_matrix(y_true_emotion, y_pred_multi_emotion, labels=emo_labels).tolist(),
+                "matrix": confusion_matrix(y_true_emotion, y_pred_emotion, labels=emo_labels).tolist(),
             },
         },
         "sentiment_evaluation": {
-            "lexical_text_only": {
-                "accuracy": round(sent_lex_acc, 4),
-                "macro_f1": round(sent_lex_macro_f1, 4),
-                "weighted_f1": round(sent_lex_weighted_f1, 4),
-            },
-            "multimodal_acoustic_fused": {
-                "accuracy": round(sent_multi_acc, 4),
-                "macro_f1": round(sent_multi_macro_f1, 4),
-                "weighted_f1": round(sent_multi_weighted_f1, 4),
-            },
-            "accuracy": round(sent_multi_acc, 4),
-            "macro_f1": round(sent_multi_macro_f1, 4),
-            "weighted_f1": round(sent_multi_weighted_f1, 4),
-            "classification_report": classification_report(y_true_sentiment, y_pred_multi_sentiment, output_dict=True),
+            "lexical_text_only": sentiment_text_only,
+            "multimodal_acoustic_fused": unavailable_fusion,
+            "accuracy": sentiment_text_only["accuracy"],
+            "macro_f1": sentiment_text_only["macro_f1"],
+            "weighted_f1": sentiment_text_only["weighted_f1"],
+            "classification_report": classification_report(
+                y_true_sentiment, y_pred_sentiment, labels=sent_labels, output_dict=True, zero_division=0
+            ),
         },
     }
-
-    return meld_results
 
 
 def generate_markdown_report(churn_eval: Dict[str, Any], meld_eval: Dict[str, Any], out_path: Path):
