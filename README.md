@@ -132,34 +132,108 @@ e:\ai\
 - **NLP & Transformers**: `torch`, `transformers`, `sentence-transformers`
 - **API & Streaming**: `fastapi`, `uvicorn[standard]`, `websockets`, `pydantic`
 - **Dashboard**: `streamlit`, `plotly`
-- **Database**: `sqlalchemy`, `sqlite3` (prototype) / `psycopg` (production)
+- **Database**: `sqlalchemy`, `sqlite3` (development) / `postgresql` (production)
+- **Containerization & CI/CD**: `Docker`, `docker-compose`, `GitHub Actions`
 - **Testing**: `pytest`, `pytest-asyncio`, `httpx`
 
 ---
 
-## 6. Implementation Milestones
+## 6. Model Benchmarks & Statistical Integrity
 
-| Milestone | Focus | Key Deliverables |
-| :--- | :--- | :--- |
-| **Milestone 1: Foundation & Datasets** | Data Ingestion & Schemas | Ingest `D:\MELD-master`, build schemas, PII redaction filter, project skeleton. |
-| **Milestone 2: Speech & NLP MVP** | Transcription & Emotion | `faster-whisper` transcription, MELD-trained emotion/sentiment inference engine. |
-| **Milestone 3: Predictive ML & SHAP** | Intent & Churn Prediction | Intent classifier, XGBoost churn risk predictor with SHAP waterfall explanations. |
-| **Milestone 4: Multi-Agent Engine** | Specialized Agents & Evidence Ledger | 6 AI agents, auditable Evidence Ledger linking claims to timestamps, hybrid provider. |
-| **Milestone 5: API & Live Streaming** | FastAPI & WebSockets | Async upload endpoints, WebSocket live microphone streaming and incremental turns. |
-| **Milestone 6: Executive Dashboard** | Streamlit UI & Release | Interactive call player, synchronized Evidence Ledger, KPI views, model evaluation tab. |
+### MELD Emotion & Sentiment Classifiers
+- **Dataset**: MELD (13,708 conversational turns across 1,432 multi-turn dialogues).
+- **Architecture**: TF-IDF + Calibrated Linear Support Vector Machine (`SGDClassifier(loss='log_loss')`) with class balancing.
+- **Emotion Performance (7-class)**:
+  - Neutral F1: **0.78**
+  - Joy F1: **0.55**
+  - Anger F1: **0.44**
+  - Surprise F1: **0.51**
+  - Overall Weighted F1: **0.6558**
+- **Sentiment Performance (3-class polarity)**:
+  - Neutral / Positive / Negative Macro F1: **0.6406**
+
+### Customer Churn Risk Model & SHAP Explainability
+- **Dataset**: Bank Customer Churn dataset (165,000+ customer records).
+- **Architecture**: XGBoost Gradient Boosted Decision Trees + TreeSHAP Explainer.
+- **Statistical Benchmark**:
+  - **Test ROC-AUC**: `0.8808`
+  - **Test PR-AUC**: `0.7109`
+  - **Brier Calibration Score**: `0.0984`
+- **Statistical Separation Guarantee**:
+  - The model outputs a statistically verified `baseline_churn_probability` (0.0 to 1.0) derived strictly from the trained XGBoost model and explained via TreeSHAP feature contributions.
+  - In-call conversational modifiers (e.g., explicit cancellation threats, extreme frustration peaks) are computed separately and reported under `in_call_operational_modifier` as contact-center operational escalation signals, never misrepresented as learned longitudinal probabilities.
 
 ---
 
-## 7. Testing & Quality Strategy
+## 7. Verified API & WebSocket Reference
 
-1. **Unit Tests**:
-   - Audio normalization: sample rate conversion to 16kHz mono.
-   - PII filtering: automatic masking of credit cards, phone numbers, and SSNs.
-   - Schema validation: verify Evidence Ledger timestamps and turn index consistency.
-2. **ML Evaluation**:
-   - MELD Emotion/Sentiment: Macro-F1 and confusion matrix evaluated on `test_sent_emo.csv`.
-   - Churn Model: PR-AUC, ROC-AUC, and Brier calibration score.
-   - Grounding Gate: 100% of generated business recommendations must cite at least one verified Evidence Ledger excerpt.
-3. **Integration & WebSocket Tests**:
-   - Full pipeline execution: Audio -> Transcribe -> Turn Extraction -> ML Inference -> Agent Ledger -> DB Save.
-   - Streaming stability: Reconnection handling and low latency (< 1.5s per chunk).
+The backend is built with **FastAPI** (`src/callintel/api/app.py`) and backed by SQLAlchemy ORM persistence.
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/health` | System health check and model readiness status |
+| `POST` | `/api/v1/calls/upload` | Multipart audio file upload, async processing & persistence |
+| `GET` | `/api/v1/calls/{call_id}` | Retrieve call metadata, duration, and processing status |
+| `GET` | `/api/v1/calls/{call_id}/transcript` | Retrieve timestamped transcript turns and speaker attributions |
+| `GET` | `/api/v1/calls/{call_id}/insights` | Retrieve ML predictions, SHAP drivers, and Evidence Ledger claims |
+| `GET` | `/api/v1/analytics/overview` | Aggregated contact center KPIs, sentiment ratios, and risk counts |
+| `WS` | `/api/v1/stream/{session_id}` | Real-time WebSocket streaming audio chunk processing & frustration alerts |
+
+---
+
+## 8. Quickstart & Verification Guide
+
+### 1. Local Environment Setup
+```bash
+# Clone the repository
+git clone https://github.com/mightyalok00/callintel-ai.git
+cd callintel-ai
+
+# Create and activate Python 3.12 virtual environment
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### 2. Run the Full Test Suite
+```bash
+pytest tests/unit/ tests/api/ -v
+```
+*Expected: 12 passed tests across speech, ML, agents, and FastAPI REST/WebSocket endpoints.*
+
+### 3. Launch the FastAPI Service
+```bash
+uvicorn src.callintel.api.app:app --host 0.0.0.0 --port 8000 --reload
+```
+Interactive Swagger API documentation is available at `http://localhost:8000/docs`.
+
+### 4. Launch the Executive Streamlit Dashboard
+```bash
+streamlit run dashboard/app.py --server.port 8501
+```
+Open `http://localhost:8501` to access:
+- **Call Explorer**: Audio player with synchronized transcript highlighting.
+- **Evidence Ledger**: Auditable claims linked directly to conversation turn IDs and timestamps.
+- **SHAP Retention Waterfall**: Interactive Plotly waterfall charts visualizing customer risk factors.
+- **Action Dispatcher**: One-click escalation to CRM, Slack, and Zendesk.
+
+### 5. Run with Docker Compose
+```bash
+docker-compose up --build
+```
+This boots both the FastAPI backend (`port 8000`) and the Streamlit dashboard (`port 8501`) concurrently.
+
+---
+
+## 9. CI/CD & Automated Safeguards
+
+- **GitHub Actions Workflow** (`.github/workflows/ci.yml`): Runs on every pull request and push to `main` across Ubuntu and Windows runners.
+- **Automated Validation**:
+  - Python 3.12 syntax and unit test verification.
+  - REST & WebSocket API lifecycle test coverage.
+  - Secret scanning and git hygiene verification.

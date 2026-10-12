@@ -9,8 +9,8 @@ import json
 from pathlib import Path
 from collections import Counter
 
-MELD_SOURCE_DIR = Path(r"D:\MELD-master\data\MELD")
-DEST_DIR = Path(r"e:\ai\data\meld")
+MELD_SOURCE_DIR = Path(os.getenv("MELD_DATA_DIR", r"D:\MELD-master\data\MELD"))
+DEST_DIR = Path(os.getenv("DEST_MELD_DIR", r"data/meld"))
 
 def inspect_and_ingest():
     print(f"[*] Checking MELD source directory at: {MELD_SOURCE_DIR}")
