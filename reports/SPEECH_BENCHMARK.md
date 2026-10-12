@@ -10,11 +10,11 @@ Diarizer: `AcousticDiarizer (34-dim acoustic vector: F0 pitch, 13 MFCC means & s
 
 | Metric | Measured Value | Industry Target | Status |
 | :--- | :--- | :--- | :--- |
-| **Mean Word Error Rate (WER)** | **1.03%** | < 15.0% | **PASSED (Multi-Scenario Tested)** |
+| **Mean Word Error Rate (WER)** | **1.03%** | < 15.0% | **Controlled fixtures only; not generalizable** |
 | **Diarization Error Rate (DER)** | **Not measured** | Requires time-aligned references | **Not reported** |
 | **Speaker Count Discovery ($k^*$)** | **50.0%** | > 85.0% | **Below target** |
-| **Real-Time Factor (RTF)** | **0.09x** | < 1.0x (faster than real-time) | **PASSED (High Throughput)** |
-| **Peak Memory Footprint** | **56.44 MB** | < 1,024 MB | **PASSED (Edge/CPU Deployable)** |
+| **Real-Time Factor (RTF)** | **0.09x** | < 1.0x (faster than real-time) | **Measured on this environment** |
+| **Peak Memory Footprint** | **56.44 MB** | < 1,024 MB | **Measured on this environment** |
 
 > [!NOTE]
 > **Controlled Benchmark Fixture vs In-the-Wild Telephony**:
