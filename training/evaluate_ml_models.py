@@ -232,6 +232,8 @@ def evaluate_churn_models() -> Dict[str, Any]:
     cal_probs = cal_lr.predict_proba(test_logits)[:, 1]
     cal_brier = float(brier_score_loss(y_test, cal_probs))
     cal_ece, cal_bins = compute_expected_calibration_error(y_test.values, cal_probs)
+    cal_pred = (cal_probs >= 0.50).astype(int)
+    cal_f1 = float(f1_score(y_test, cal_pred))
 
     # 6. 5-Fold Stratified Cross-Validation (Empirical Confidence Intervals)
     print("[*] Running 5-Fold Stratified Cross-Validation for Confidence Intervals...")
@@ -360,7 +362,7 @@ def evaluate_churn_models() -> Dict[str, Any]:
                 "pr_auc": round(xgb_pr_auc, 4),
                 "brier_score": round(cal_brier, 4),
                 "ece": round(cal_ece, 4),
-                "f1_score": round(xgb_f1, 4),
+                "f1_score": round(cal_f1, 4),
                 "description": "Platt scaling fitted on a dedicated training calibration split; metrics evaluated on untouched test data",
             },
         ],
