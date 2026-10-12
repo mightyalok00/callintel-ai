@@ -206,8 +206,8 @@ The backend is built with **FastAPI** (`src/callintel/api/app.py`) and backed by
 | `GET` | `/health` | System health check and model readiness status |
 | `POST` | `/api/v1/calls/upload` | Hardened multipart audio upload (magic-byte validation, 100MB limit, sanitized path) |
 | `GET` | `/api/v1/calls/{call_id}` | Retrieve call metadata, duration, and processing status |
-| `DELETE`| `/api/v1/calls/{call_id}` | Delete a specific call recording and database records |
-| `DELETE`| `/api/v1/calls/history` | Purge all call history and reset contact center state |
+| `DELETE` | `/api/v1/calls/{call_id}` | Delete a specific call recording and database records |
+| `DELETE` | `/api/v1/calls/history` | Purge all call history and reset contact center state |
 | `GET` | `/api/v1/calls/{call_id}/transcript` | Retrieve timestamped transcript turns and speaker attributions |
 | `GET` | `/api/v1/calls/{call_id}/insights` | Retrieve ML predictions, SHAP drivers, and Evidence Ledger claims |
 | `GET` | `/api/v1/analytics/overview` | Aggregated contact center KPIs, sentiment ratios, and risk counts |
