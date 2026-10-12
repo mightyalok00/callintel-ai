@@ -36,7 +36,7 @@ A valid DER requires time-aligned reference speech regions and scoring missed sp
 
 ## 3. Detailed Call-Level Benchmark Breakdown
 
-| Call ID | Scenario | Duration | Processing Time | RTF | WER | DER | Discovered $k^*$ | Peak RAM |
+| Call ID | Scenario | Duration | Processing Time | RTF | WER | Speaker-attribution proxy (not DER) | Discovered $k^*$ | Peak RAM |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :---: | :--- |
 | `CALL_2026_APEX_001` | Customer Retention (Pricing & Cancellation Threat) | 45.9s | 5.98s | 0.13x | **1.0%** | **0.0%** | `k*=2` | 66.01 MB |
 | `CALL_2026_SALES_002` | Sales Expansion (Enterprise Tier & Buying Signals) | 49.8s | 3.57s | 0.072x | **0.0%** | **0.0%** | `k*=3` | 57.82 MB |
