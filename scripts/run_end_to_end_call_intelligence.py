@@ -4,6 +4,7 @@ Connects Audio -> faster-whisper ASR -> MELD Emotion -> XGBoost Churn -> 6 AI Ag
 """
 
 import sys
+import json
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent

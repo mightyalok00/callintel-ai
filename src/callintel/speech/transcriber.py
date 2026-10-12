@@ -43,6 +43,7 @@ class WhisperTranscriber:
         Transcribes an audio file into timestamped sentence turns with acoustic pause-based speaker attribution.
         """
         self._ensure_loaded()
+        assert self.model is not None, "Whisper model failed to load"
         path = Path(audio_path)
         if not path.exists():
             raise FileNotFoundError(f"Audio file not found: {path}")

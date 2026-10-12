@@ -53,8 +53,10 @@ class ChurnRiskPredictor:
         """
         if not self.is_ready:
             self._load_artifacts()
-            if not self.is_ready:
+            if self.pipeline is None or self.explainer is None:
                 raise RuntimeError("Churn model artifacts not found. Run training/train_churn.py first.")
+
+        assert self.pipeline is not None and self.explainer is not None
 
         # Default fallback values for tabular customer profile
         defaults = {
@@ -96,7 +98,7 @@ class ChurnRiskPredictor:
                 "value": round(float(feat_val), 2),
                 "direction": "increases_risk" if shap_val > 0 else "reduces_risk",
             })
-        top_drivers.sort(key=lambda x: abs(x["impact"]), reverse=True)
+        top_drivers.sort(key=lambda x: abs(float(x["impact"])), reverse=True)
 
         # Base Risk Tier (derived strictly from the trained XGBoost model)
         if base_prob >= 0.75:

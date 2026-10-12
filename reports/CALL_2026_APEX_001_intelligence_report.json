@@ -1,14 +1,14 @@
 {
   "call_id": "CALL_2026_APEX_001",
-  "summary": "Call comprised 16 conversation turns. Customer presented pricing and subscription concerns during the first half. Agent proposed options and negotiated a resolution in the closing phase.",
+  "summary": "Conversation of 16 turns centered around 'discount, thank, alex'. Caller initiated dialogue with: \"customer request...\". Interaction concluded with: \"Thank you....\".",
   "overall_sentiment": "mixed",
-  "sentiment_score": 0.312,
+  "sentiment_score": 0.062,
   "churn_risk_level": "CRITICAL",
   "churn_risk_score": 0.99,
   "primary_intent": "pricing_objection",
   "unresolved_issues": [],
   "buying_signals": [
-    "I would like to consider staying.",
+    "would like to consider staying.",
     "That sounds reasonable.",
     "Please go ahead and apply it to my subscription."
   ],
@@ -22,9 +22,9 @@
       "turn_id": 0,
       "speaker": "Agent",
       "start_time": "00:00:00.000",
-      "end_time": "00:00:04.020",
+      "end_time": "00:00:03.999",
       "start_seconds": 0.0,
-      "end_seconds": 4.02,
+      "end_seconds": 3.999,
       "verbatim_quote": "Hello, thank you for calling APEX Cloud Support.",
       "supporting_signals": {
         "emotion": "neutral",
@@ -34,10 +34,10 @@
     {
       "turn_id": 1,
       "speaker": "Agent",
-      "start_time": "00:00:04.020",
-      "end_time": "00:00:05.361",
-      "start_seconds": 4.02,
-      "end_seconds": 5.361,
+      "start_time": "00:00:03.999",
+      "end_time": "00:00:05.332",
+      "start_seconds": 3.999,
+      "end_seconds": 5.332,
       "verbatim_quote": "My name is Alex.",
       "supporting_signals": {
         "emotion": "neutral",
@@ -47,10 +47,10 @@
     {
       "turn_id": 2,
       "speaker": "Agent",
-      "start_time": "00:00:05.361",
-      "end_time": "00:00:07.455",
-      "start_seconds": 5.361,
-      "end_seconds": 7.455,
+      "start_time": "00:00:05.332",
+      "end_time": "00:00:07.414",
+      "start_seconds": 5.332,
+      "end_seconds": 7.414,
       "verbatim_quote": "How can I help you today?",
       "supporting_signals": {
         "emotion": "neutral",
@@ -60,10 +60,10 @@
     {
       "turn_id": 3,
       "speaker": "Agent",
-      "start_time": "00:00:07.455",
-      "end_time": "00:00:08.125",
-      "start_seconds": 7.455,
-      "end_seconds": 8.125,
+      "start_time": "00:00:07.414",
+      "end_time": "00:00:08.081",
+      "start_seconds": 7.414,
+      "end_seconds": 8.081,
       "verbatim_quote": "Hi Alex.",
       "supporting_signals": {
         "emotion": "neutral",
@@ -72,11 +72,11 @@
     },
     {
       "turn_id": 4,
-      "speaker": "Customer",
-      "start_time": "00:00:08.125",
-      "end_time": "00:00:11.978",
-      "start_seconds": 8.125,
-      "end_seconds": 11.978,
+      "speaker": "Agent",
+      "start_time": "00:00:08.081",
+      "end_time": "00:00:11.913",
+      "start_seconds": 8.081,
+      "end_seconds": 11.913,
       "verbatim_quote": "Your product is good, but it is too expensive.",
       "supporting_signals": {
         "is_pricing_objection": true,
@@ -86,26 +86,26 @@
     },
     {
       "turn_id": 5,
-      "speaker": "Customer",
-      "start_time": "00:00:11.978",
-      "end_time": "00:00:17.003",
-      "start_seconds": 11.978,
-      "end_seconds": 17.003,
+      "speaker": "Agent",
+      "start_time": "00:00:11.913",
+      "end_time": "00:00:16.911",
+      "start_seconds": 11.913,
+      "end_seconds": 16.911,
       "verbatim_quote": "I might cancel my subscription if the price increases again.",
       "supporting_signals": {
         "is_pricing_objection": true,
         "is_cancellation_warning": true,
-        "emotion": "joy",
-        "sentiment": "positive"
+        "emotion": "anger",
+        "sentiment": "neutral"
       }
     },
     {
       "turn_id": 6,
-      "speaker": "Customer",
-      "start_time": "00:00:17.003",
-      "end_time": "00:00:20.856",
-      "start_seconds": 17.003,
-      "end_seconds": 20.856,
+      "speaker": "Agent",
+      "start_time": "00:00:16.911",
+      "end_time": "00:00:20.743",
+      "start_seconds": 16.911,
+      "end_seconds": 20.743,
       "verbatim_quote": "I completely understand your pricing concerns.",
       "supporting_signals": {
         "is_pricing_objection": true,
@@ -116,24 +116,24 @@
     {
       "turn_id": 7,
       "speaker": "Agent",
-      "start_time": "00:00:20.856",
-      "end_time": "00:00:26.803",
-      "start_seconds": 20.856,
-      "end_seconds": 26.803,
+      "start_time": "00:00:20.743",
+      "end_time": "00:00:26.658",
+      "start_seconds": 20.743,
+      "end_seconds": 26.658,
       "verbatim_quote": "Let me review your current usage and explain our discount plan options.",
       "supporting_signals": {
         "is_agent_commitment": true,
         "emotion": "anger",
-        "sentiment": "neutral"
+        "sentiment": "negative"
       }
     },
     {
       "turn_id": 8,
       "speaker": "Agent",
-      "start_time": "00:00:26.803",
-      "end_time": "00:00:28.143",
-      "start_seconds": 26.803,
-      "end_seconds": 28.143,
+      "start_time": "00:00:26.658",
+      "end_time": "00:00:27.991",
+      "start_seconds": 26.658,
+      "end_seconds": 27.991,
       "verbatim_quote": "Okay, please do.",
       "supporting_signals": {
         "emotion": "anger",
@@ -143,11 +143,11 @@
     {
       "turn_id": 9,
       "speaker": "Agent",
-      "start_time": "00:00:28.143",
+      "start_time": "00:00:27.991",
       "end_time": "00:00:30.740",
-      "start_seconds": 28.143,
+      "start_seconds": 27.991,
       "end_seconds": 30.74,
-      "verbatim_quote": "If you have an annual discount,",
+      "verbatim_quote": "If you have an annual discount, I",
       "supporting_signals": {
         "is_agent_commitment": true,
         "emotion": "neutral",
@@ -156,12 +156,12 @@
     },
     {
       "turn_id": 10,
-      "speaker": "Customer",
+      "speaker": "Agent",
       "start_time": "00:00:30.740",
-      "end_time": "00:00:33.467",
+      "end_time": "00:00:33.164",
       "start_seconds": 30.74,
-      "end_seconds": 33.467,
-      "verbatim_quote": "I would like to consider staying.",
+      "end_seconds": 33.164,
+      "verbatim_quote": "would like to consider staying.",
       "supporting_signals": {
         "emotion": "neutral",
         "sentiment": "neutral"
@@ -169,24 +169,24 @@
     },
     {
       "turn_id": 11,
-      "speaker": "Customer",
-      "start_time": "00:00:33.467",
-      "end_time": "00:00:34.293",
-      "start_seconds": 33.467,
-      "end_seconds": 34.293,
+      "speaker": "Agent",
+      "start_time": "00:00:33.164",
+      "end_time": "00:00:33.946",
+      "start_seconds": 33.164,
+      "end_seconds": 33.946,
       "verbatim_quote": "Wonderful.",
       "supporting_signals": {
         "emotion": "joy",
-        "sentiment": "positive"
+        "sentiment": "neutral"
       }
     },
     {
       "turn_id": 12,
       "speaker": "Agent",
-      "start_time": "00:00:34.293",
-      "end_time": "00:00:39.747",
-      "start_seconds": 34.293,
-      "end_seconds": 39.747,
+      "start_time": "00:00:33.946",
+      "end_time": "00:00:39.106",
+      "start_seconds": 33.946,
+      "end_seconds": 39.106,
       "verbatim_quote": "I can apply a 15% loyalty discount to your account starting today.",
       "supporting_signals": {
         "is_agent_commitment": true,
@@ -196,11 +196,11 @@
     },
     {
       "turn_id": 13,
-      "speaker": "Customer",
-      "start_time": "00:00:39.747",
-      "end_time": "00:00:41.647",
-      "start_seconds": 39.747,
-      "end_seconds": 41.647,
+      "speaker": "Agent",
+      "start_time": "00:00:39.106",
+      "end_time": "00:00:40.905",
+      "start_seconds": 39.106,
+      "end_seconds": 40.905,
       "verbatim_quote": "That sounds reasonable.",
       "supporting_signals": {
         "emotion": "neutral",
@@ -209,24 +209,24 @@
     },
     {
       "turn_id": 14,
-      "speaker": "Customer",
-      "start_time": "00:00:41.647",
-      "end_time": "00:00:45.614",
-      "start_seconds": 41.647,
-      "end_seconds": 45.614,
+      "speaker": "Agent",
+      "start_time": "00:00:40.905",
+      "end_time": "00:00:44.658",
+      "start_seconds": 40.905,
+      "end_seconds": 44.658,
       "verbatim_quote": "Please go ahead and apply it to my subscription.",
       "supporting_signals": {
-        "emotion": "joy",
-        "sentiment": "positive"
+        "emotion": "anger",
+        "sentiment": "neutral"
       }
     },
     {
       "turn_id": 15,
-      "speaker": "Customer",
-      "start_time": "00:00:45.614",
-      "end_time": "00:00:46.440",
-      "start_seconds": 45.614,
-      "end_seconds": 46.44,
+      "speaker": "Agent",
+      "start_time": "00:00:44.658",
+      "end_time": "00:00:45.440",
+      "start_seconds": 44.658,
+      "end_seconds": 45.44,
       "verbatim_quote": "Thank you.",
       "supporting_signals": {
         "emotion": "joy",
@@ -237,44 +237,44 @@
   "recommendations": [
     {
       "action_code": "ACT_RETENTION_LOCK_DISCOUNT",
-      "title": "Lock Loyalty Discount & Send Confirmation",
-      "description": "Customer expressed explicit cancellation intent citing pricing. Rep offered a 15% discount. Send written email confirmation and schedule a 30-day health check.",
+      "title": "Lock Loyalty Retention Offer & Dispatch Confirmation",
+      "description": "Customer communicated cancellation intent based on discount, thank. Agent proposed a retention resolution. Send written confirmation and schedule 30-day account check-in.",
       "priority": "P1_URGENT",
-      "owner_role": "Customer Success Manager",
+      "owner_role": "Customer Success / Retention Manager",
       "requires_human_approval": true,
       "evidence": [
         {
           "turn_id": 5,
-          "speaker": "Customer",
-          "start_time": "00:00:11.978",
-          "end_time": "00:00:17.003",
-          "start_seconds": 11.978,
-          "end_seconds": 17.003,
+          "speaker": "Agent",
+          "start_time": "00:00:11.913",
+          "end_time": "00:00:16.911",
+          "start_seconds": 11.913,
+          "end_seconds": 16.911,
           "verbatim_quote": "I might cancel my subscription if the price increases again.",
           "supporting_signals": {
             "is_pricing_objection": true,
             "is_cancellation_warning": true,
-            "emotion": "joy",
-            "sentiment": "positive"
+            "emotion": "anger",
+            "sentiment": "neutral"
           }
         }
       ]
     },
     {
       "action_code": "ACT_SALES_ANNUAL_REVIEW",
-      "title": "Evaluate Annual Plan Migration",
-      "description": "Customer is sensitive to future price increases. Transition to annual billing to guarantee locked rates.",
+      "title": "Evaluate Annual Plan Rate Lock",
+      "description": "Caller is sensitive to fee increases. Offer multi-month or annual commitment to lock current tier.",
       "priority": "P2_HIGH",
       "owner_role": "Account Executive",
       "requires_human_approval": false,
       "evidence": [
         {
           "turn_id": 4,
-          "speaker": "Customer",
-          "start_time": "00:00:08.125",
-          "end_time": "00:00:11.978",
-          "start_seconds": 8.125,
-          "end_seconds": 11.978,
+          "speaker": "Agent",
+          "start_time": "00:00:08.081",
+          "end_time": "00:00:11.913",
+          "start_seconds": 8.081,
+          "end_seconds": 11.913,
           "verbatim_quote": "Your product is good, but it is too expensive.",
           "supporting_signals": {
             "is_pricing_objection": true,
@@ -284,26 +284,26 @@
         },
         {
           "turn_id": 5,
-          "speaker": "Customer",
-          "start_time": "00:00:11.978",
-          "end_time": "00:00:17.003",
-          "start_seconds": 11.978,
-          "end_seconds": 17.003,
+          "speaker": "Agent",
+          "start_time": "00:00:11.913",
+          "end_time": "00:00:16.911",
+          "start_seconds": 11.913,
+          "end_seconds": 16.911,
           "verbatim_quote": "I might cancel my subscription if the price increases again.",
           "supporting_signals": {
             "is_pricing_objection": true,
             "is_cancellation_warning": true,
-            "emotion": "joy",
-            "sentiment": "positive"
+            "emotion": "anger",
+            "sentiment": "neutral"
           }
         },
         {
           "turn_id": 6,
-          "speaker": "Customer",
-          "start_time": "00:00:17.003",
-          "end_time": "00:00:20.856",
-          "start_seconds": 17.003,
-          "end_seconds": 20.856,
+          "speaker": "Agent",
+          "start_time": "00:00:16.911",
+          "end_time": "00:00:20.743",
+          "start_seconds": 16.911,
+          "end_seconds": 20.743,
           "verbatim_quote": "I completely understand your pricing concerns.",
           "supporting_signals": {
             "is_pricing_objection": true,
@@ -317,7 +317,7 @@
   "metadata": {
     "qa_score": 100.0,
     "qa_status": "PASSED",
-    "de_escalated": false,
+    "de_escalated": true,
     "shap_drivers": [
       {
         "feature": "Age",
@@ -349,6 +349,13 @@
         "value": 88000.0,
         "direction": "reduces_risk"
       }
+    ],
+    "prominent_topics": [
+      "discount",
+      "thank",
+      "alex",
+      "today",
+      "subscription"
     ]
   }
 }
