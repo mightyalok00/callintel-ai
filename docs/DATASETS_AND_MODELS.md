@@ -42,8 +42,9 @@ All core datasets required for testing, running the API, and launching the Strea
   - `data/samples/sample_customer_call.wav` (Retention crisis: Pricing objection & cancellation threat)
   - `data/samples/sample_sales_expansion.wav` (Sales expansion: Enterprise tier & buying signals)
   - `data/samples/sample_technical_escalation.wav` (Technical outage: Database sync bug & urgent escalation)
-- **Acoustic Characteristics**: Synthesized multi-speaker audio with distinct voices for Agent (`Microsoft David Desktop` male voice) and Customer (`Microsoft Zira Desktop` female voice) separated by natural conversational pauses.
-- **Generator Script**: `scripts/generate_demo_calls.py`.
+  - `data/samples/sample_customer_call_noisy_snr15.wav` (Acoustic noise stress test: +15dB SNR additive office background noise)
+- **Acoustic Characteristics**: Synthesized multi-speaker audio with distinct voices for Agent (`Microsoft David Desktop` male voice) and Customer (`Microsoft Zira Desktop` female voice) separated by natural conversational pauses, paired with synthetic additive office noise fixtures.
+- **Generator Script**: `scripts/generate_demo_calls.py` and `training/benchmark_speech.py`.
 
 ---
 
