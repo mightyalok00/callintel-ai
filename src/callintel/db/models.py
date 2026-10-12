@@ -3,7 +3,7 @@ Database models and storage schemas for Call Intelligence Engine.
 Supports SQLite / PostgreSQL with SQLAlchemy.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from sqlalchemy import (
     Column,
@@ -43,9 +43,8 @@ class CallRecord(Base):
     evidence_ledger = Column(JSON, default=list)
     recommendations = Column(JSON, default=list)
     metadata_payload = Column(JSON, default=dict)
-    
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
 DATABASE_URL = "sqlite:///./callintel.db"

@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "callintel"
+version = "0.1.0"
+description = "AI Call Intelligence Engine with Speech Processing, Predictive ML, and Multi-Agent Auditable Evidence Ledger"
+authors = [{ name = "Alok Agarwal" }]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic>=2.9.0",
+    "websockets>=13.0",
+    "faster-whisper>=1.0.0",
+    "soundfile>=0.12.1",
+    "numpy>=1.26.4",
+    "pandas>=2.2.2",
+    "scikit-learn>=1.5.1",
+    "xgboost>=2.1.0",
+    "shap>=0.46.0",
+    "sqlalchemy>=2.0.32",
+    "streamlit>=1.38.0",
+    "plotly>=5.24.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-v --tb=short"
