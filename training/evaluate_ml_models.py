@@ -37,6 +37,7 @@ from sklearn.metrics import (
     accuracy_score,
     precision_score,
     recall_score,
+    average_precision_score,
 )
 import xgboost as xgb
 import shap
@@ -150,8 +151,10 @@ def evaluate_churn_models() -> Dict[str, Any]:
     dummy_probs = np.full(len(y_test), prevalence)
     dummy_pred = np.zeros(len(y_test), dtype=int)
     dummy_roc = float(roc_auc_score(y_test, dummy_probs))
-    dummy_pr, dummy_rec, _ = precision_recall_curve(y_test, dummy_probs)
-    dummy_pr_auc = float(auc(dummy_rec, dummy_pr))
+    # Average precision gives the constant-prevalence classifier its correct baseline:
+    # AP equals the positive-class prevalence for constant scores. Trapezoidal PR-AUC
+    # can misleadingly inflate this baseline because of the artificial endpoint at recall=0.
+    dummy_pr_auc = float(average_precision_score(y_test, dummy_probs))
     dummy_brier = float(brier_score_loss(y_test, dummy_probs))
     dummy_ece, _ = compute_expected_calibration_error(y_test.values, dummy_probs)
 
@@ -165,8 +168,7 @@ def evaluate_churn_models() -> Dict[str, Any]:
     lr_probs = log_reg.predict_proba(X_test_scaled)[:, 1]
     lr_pred = log_reg.predict(X_test_scaled)
     lr_roc = float(roc_auc_score(y_test, lr_probs))
-    lr_pr, lr_rec, _ = precision_recall_curve(y_test, lr_probs)
-    lr_pr_auc = float(auc(lr_rec, lr_pr))
+    lr_pr_auc = float(average_precision_score(y_test, lr_probs))
     lr_brier = float(brier_score_loss(y_test, lr_probs))
     lr_ece, _ = compute_expected_calibration_error(y_test.values, lr_probs)
     lr_f1 = float(f1_score(y_test, lr_pred))
@@ -178,38 +180,41 @@ def evaluate_churn_models() -> Dict[str, Any]:
     rf_probs = rf.predict_proba(X_test_trans)[:, 1]
     rf_pred = rf.predict(X_test_trans)
     rf_roc = float(roc_auc_score(y_test, rf_probs))
-    rf_pr, rf_rec, _ = precision_recall_curve(y_test, rf_probs)
-    rf_pr_auc = float(auc(rf_rec, rf_pr))
+    rf_pr_auc = float(average_precision_score(y_test, rf_probs))
     rf_brier = float(brier_score_loss(y_test, rf_probs))
     rf_ece, _ = compute_expected_calibration_error(y_test.values, rf_probs)
     rf_f1 = float(f1_score(y_test, rf_pred))
 
-    # 4. Production Model: XGBoost Classifier
+    # 4. Production Model: reserve a calibration split from TRAINING data only.
+    # The held-out test labels must never be used for early stopping, fitting, or calibration.
     print("[*] Evaluating Production Model: XGBoost Classifier...")
+    X_fit, X_cal, y_fit, y_cal = train_test_split(
+        X_train_df, y_train, test_size=0.20, random_state=43, stratify=y_train
+    )
     model_artifact_path = MODELS_DIR / "churn_xgb_pipeline.joblib"
     if model_artifact_path.exists():
-        loaded = joblib.load(model_artifact_path)
-        xgb_model = loaded["model"]
-    else:
-        xgb_model = xgb.XGBClassifier(
-            n_estimators=300,
-            max_depth=5,
-            learning_rate=0.05,
-            subsample=0.85,
-            colsample_bytree=0.85,
-            scale_pos_weight=scale_pos_weight,
-            eval_metric=["aucpr", "auc"],
-            random_state=42,
-            tree_method="hist",
-            n_jobs=-1,
-        )
-        xgb_model.fit(X_train_df, y_train, eval_set=[(X_test_df, y_test)], verbose=False)
+        # Existing artifacts may have been trained under a different split/protocol.
+        # Refit during evaluation to keep this benchmark leakage-free and reproducible.
+        print("[!] Ignoring cached XGBoost artifact for evaluation; fitting with current leakage-free split.")
+    xgb_model = xgb.XGBClassifier(
+        n_estimators=300,
+        max_depth=5,
+        learning_rate=0.05,
+        subsample=0.85,
+        colsample_bytree=0.85,
+        scale_pos_weight=scale_pos_weight,
+        eval_metric=["aucpr", "auc"],
+        random_state=42,
+        tree_method="hist",
+        n_jobs=-1,
+    )
+    xgb_model.fit(X_fit, y_fit, verbose=False)
 
     xgb_probs = xgb_model.predict_proba(X_test_df)[:, 1]
+    calibration_probs = xgb_model.predict_proba(X_cal)[:, 1]
     xgb_pred = (xgb_probs >= 0.50).astype(int)
     xgb_roc = float(roc_auc_score(y_test, xgb_probs))
-    xgb_pr, xgb_rec, _ = precision_recall_curve(y_test, xgb_probs)
-    xgb_pr_auc = float(auc(xgb_rec, xgb_pr))
+    xgb_pr_auc = float(average_precision_score(y_test, xgb_probs))
     xgb_brier = float(brier_score_loss(y_test, xgb_probs))
     xgb_ece, xgb_reliability_bins = compute_expected_calibration_error(y_test.values, xgb_probs)
     xgb_f1 = float(f1_score(y_test, xgb_pred))
@@ -217,20 +222,19 @@ def evaluate_churn_models() -> Dict[str, Any]:
     xgb_prec = float(precision_score(y_test, xgb_pred))
     xgb_recall = float(recall_score(y_test, xgb_pred))
 
-    # 5. Calibrated XGBoost (Platt Scaling via Logistic Regression on Logits)
-    print("[*] Calibrating XGBoost with Platt Scaling (Sigmoid / Logistic regression)...")
-    cal_lr = LogisticRegression()
-    # Log-odds of predicted probabilities
+    # 5. Platt calibration fitted only on the dedicated training calibration split.
+    # Report calibrated metrics on the untouched test set for an apples-to-apples comparison.
+    print("[*] Calibrating XGBoost with training-only Platt scaling...")
+    cal_lr = LogisticRegression(max_iter=1000, random_state=42)
     eps = 1e-7
-    clipped_probs = np.clip(xgb_probs, eps, 1.0 - eps)
-    logits = np.log(clipped_probs / (1.0 - clipped_probs)).reshape(-1, 1)
-    # 5-fold or 50% split for calibration fit
-    half = len(logits) // 2
-    cal_lr.fit(logits[:half], y_test.iloc[:half])
-    cal_probs = cal_lr.predict_proba(logits[half:])[:, 1]
-    cal_y_test = y_test.iloc[half:]
-    cal_brier = float(brier_score_loss(cal_y_test, cal_probs))
-    cal_ece, cal_bins = compute_expected_calibration_error(cal_y_test.values, cal_probs)
+    cal_train_clipped = np.clip(calibration_probs, eps, 1.0 - eps)
+    cal_train_logits = np.log(cal_train_clipped / (1.0 - cal_train_clipped)).reshape(-1, 1)
+    cal_lr.fit(cal_train_logits, y_cal)
+    test_clipped = np.clip(xgb_probs, eps, 1.0 - eps)
+    test_logits = np.log(test_clipped / (1.0 - test_clipped)).reshape(-1, 1)
+    cal_probs = cal_lr.predict_proba(test_logits)[:, 1]
+    cal_brier = float(brier_score_loss(y_test, cal_probs))
+    cal_ece, cal_bins = compute_expected_calibration_error(y_test.values, cal_probs)
 
     # 6. 5-Fold Stratified Cross-Validation (Empirical Confidence Intervals)
     print("[*] Running 5-Fold Stratified Cross-Validation for Confidence Intervals...")
@@ -263,7 +267,7 @@ def evaluate_churn_models() -> Dict[str, Any]:
 
         cv_rocs.append(float(roc_auc_score(y_cv.iloc[val_i], f_probs)))
         f_pr, f_rec, _ = precision_recall_curve(y_cv.iloc[val_i], f_probs)
-        cv_pr_aucs.append(float(auc(f_rec, f_pr)))
+        cv_pr_aucs.append(float(average_precision_score(y_cv.iloc[val_i], f_probs)))
         cv_briers.append(float(brier_score_loss(y_cv.iloc[val_i], f_probs)))
         cv_f1s.append(float(f1_score(y_cv.iloc[val_i], f_pred)))
 
@@ -360,7 +364,7 @@ def evaluate_churn_models() -> Dict[str, Any]:
                 "brier_score": round(cal_brier, 4),
                 "ece": round(cal_ece, 4),
                 "f1_score": round(xgb_f1, 4),
-                "description": "Post-hoc Platt scaling calibration for optimized probability reliability",
+                "description": "Platt scaling fitted on a dedicated training calibration split; metrics evaluated on untouched test data",
             },
         ],
         "production_xgboost_metrics": {
