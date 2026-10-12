@@ -84,6 +84,61 @@ def cleanup_stale_uploads(max_age_hours: int = 24) -> int:
     return purged
 
 
+def cleanup_runtime_artifacts(call_id: Optional[str] = None) -> int:
+    """
+    Delete runtime artifacts associated with one call, or purge staged uploads.
+
+    Uploads are named with the call ID prefix. Generated report/cache files are
+    removed only when their filename contains the exact call ID token, avoiding
+    accidental deletion of shared benchmark reports or unrelated cache files.
+    For a full-history purge, all regular files in the upload staging directory
+    are removed; report/cache cleanup remains call-ID scoped.
+    """
+    deleted = 0
+    upload_dir = Path(settings.upload_dir)
+    reports_dir = Path(settings.reports_dir)
+    cache_dirs = [
+        Path(settings.base_dir) / "data" / "cache",
+        Path(settings.base_dir) / ".cache" / "callintel",
+    ]
+    targets = [(upload_dir, call_id is None), (reports_dir, False)]
+    targets.extend((directory, False) for directory in cache_dirs)
+
+    # Match a call ID as a filename token, not as an arbitrary substring.
+    token = re.compile(
+        rf"(^|[^A-Za-z0-9]){re.escape(call_id)}([^A-Za-z0-9]|$)",
+        re.IGNORECASE,
+    ) if call_id else None
+
+    for directory, purge_all_files in targets:
+        if not directory.exists() or not directory.is_dir():
+            continue
+        try:
+            for artifact in directory.rglob("*"):
+                if not artifact.is_file() and not artifact.is_symlink():
+                    continue
+                if purge_all_files:
+                    should_delete = True
+                elif call_id:
+                    should_delete = bool(token.search(artifact.name))
+                else:
+                    # During history deletion, remove artifacts that identify a
+                    # CallIntel call ID while preserving shared benchmark outputs.
+                    should_delete = bool(
+                        re.search(r"(^|[^A-Za-z0-9])CALL_[A-Z0-9]{6,}([^A-Za-z0-9]|$)", artifact.name, re.IGNORECASE)
+                    )
+                if not should_delete:
+                    continue
+                try:
+                    artifact.unlink()
+                    deleted += 1
+                except OSError as exc:
+                    logger.warning("Failed to delete runtime artifact %s: %s", artifact, exc)
+        except OSError as exc:
+            logger.warning("Could not scan runtime artifact directory %s: %s", directory, exc)
+    return deleted
+
+
 class CallUploadResponse(BaseModel):
     call_id: str
     status: str
@@ -213,6 +268,7 @@ async def upload_call_audio(
 async def get_call_status(
     call_id: str,
     service: CallAnalysisService = Depends(get_call_analysis_service),
+    api_key: Optional[str] = Depends(verify_api_key),
 ):
     """Returns processing status, metadata, and high-level KPIs for a specific call."""
     record = service.get_call(call_id)
@@ -239,6 +295,7 @@ async def get_call_status(
 async def get_call_transcript(
     call_id: str,
     service: CallAnalysisService = Depends(get_call_analysis_service),
+    api_key: Optional[str] = Depends(verify_api_key),
 ):
     """Returns timestamped dialogue turns with speaker attribution for a call."""
     record = service.get_call(call_id)
@@ -257,6 +314,7 @@ async def get_call_transcript(
 async def get_call_insights(
     call_id: str,
     service: CallAnalysisService = Depends(get_call_analysis_service),
+    api_key: Optional[str] = Depends(verify_api_key),
 ):
     """Returns the Auditable Evidence Ledger, SHAP drivers, and action recommendations."""
     record = service.get_call(call_id)
@@ -292,11 +350,13 @@ async def delete_all_call_history(
     Purges all call records and temporary staged upload files from the system.
     """
     deleted_count = service.clear_history()
-    # Clean up staged files
-    purged_files = cleanup_stale_uploads(max_age_hours=0)
+    purged_files = cleanup_runtime_artifacts()
     return {
         "status": "SUCCESS",
-        "message": f"Successfully deleted call history. Cleared {deleted_count} record(s) and {purged_files} file(s).",
+        "message": (
+            f"Successfully deleted call history. Cleared {deleted_count} record(s) "
+            f"and {purged_files} runtime artifact(s)."
+        ),
         "deleted_records": deleted_count,
         "purged_files": purged_files,
     }
@@ -308,12 +368,14 @@ async def delete_call_record(
     service: CallAnalysisService = Depends(get_call_analysis_service),
     api_key: Optional[str] = Depends(verify_api_key),
 ):
-    """Deletes a specific call record by ID."""
+    """Deletes a call record and best-effort call-scoped audio/report/cache artifacts."""
     success = service.delete_call(call_id)
     if not success:
         raise HTTPException(status_code=404, detail="Call record not found.")
+    purged_files = cleanup_runtime_artifacts(call_id=call_id)
     return {
         "status": "SUCCESS",
         "message": f"Call record {call_id} deleted successfully.",
         "call_id": call_id,
+        "purged_files": purged_files,
     }

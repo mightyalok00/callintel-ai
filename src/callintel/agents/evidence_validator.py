@@ -187,6 +187,68 @@ class EvidenceValidator:
 
         return True, None
 
+    def _check_speaker_attribution(
+        self,
+        claim: str,
+        valid_turns: List[Dict[str, Any]],
+    ) -> Optional[str]:
+        """Flag explicit actor/verb claims when cited turns come from another speaker."""
+        claim_norm = self._normalize_text(claim)
+        speaker_rules = [
+            (
+                r"\b(customer|caller|client)\b.{0,60}\b(said|stated|confirmed|requested|asked|agreed|declined|refused|reported|complained|threatened|wants|wanted|told)\b",
+                {"customer", "caller", "client"},
+            ),
+            (
+                r"\b(agent|representative|advisor)\b.{0,60}\b(said|stated|confirmed|requested|asked|agreed|declined|refused|reported|offered|promised|committed)\b",
+                {"agent", "representative", "advisor"},
+            ),
+        ]
+        for pattern, expected_speakers in speaker_rules:
+            match = re.search(pattern, claim_norm)
+            if not match:
+                continue
+            expected = match.group(1)
+            actual_speakers = {
+                str(turn.get("speaker", "")).strip().lower()
+                for turn in valid_turns
+            }
+            if not any(
+                any(alias == speaker or alias in speaker for alias in expected_speakers)
+                for speaker in actual_speakers
+            ):
+                return (
+                    f"Speaker attribution mismatch: Claim attributes the statement to "
+                    f"{expected}, but cited turns are attributed to "
+                    f"{sorted(actual_speakers) or ['unknown']}."
+                )
+        return None
+
+    def _check_recommendation_support(
+        self,
+        recommendation: Optional[str],
+        combined_text: str,
+    ) -> Optional[str]:
+        """Conservatively flag high-impact action types absent from the cited transcript."""
+        if not recommendation:
+            return None
+        action = self._normalize_text(recommendation)
+        evidence = self._normalize_text(combined_text)
+        guarded_actions = [
+            (("security incident", "security breach", "incident response", "security audit"), ("security", "breach", "unauthorized", "credential", "vulnerability")),
+            (("refund", "billing credit", "chargeback"), ("refund", "overcharg", "billing", "bill", "charge", "payment")),
+            (("escalate", "escalation", "incident response", "page engineering"), ("escalat", "urgent", "emergency", "outage", "failure", "failing", "broken", "security", "compliance")),
+        ]
+        for action_phrases, evidence_terms in guarded_actions:
+            if any(phrase in action for phrase in action_phrases) and not any(
+                term in evidence for term in evidence_terms
+            ):
+                return (
+                    "Unsupported recommendation: Proposed high-impact action is not "
+                    "grounded in the cited transcript turns."
+                )
+        return None
+
     def validate_finding(
         self,
         finding: AgentFinding,
@@ -253,8 +315,26 @@ class EvidenceValidator:
             )
 
         valid_raw_texts = [turn_lookup[s].get("utterance", "") for s in valid_segments]
+        valid_turns = [turn_lookup[s] for s in valid_segments]
         valid_turn_texts = [self._normalize_text(t) for t in valid_raw_texts]
         combined_turn_text = " ".join(valid_turn_texts)
+
+        speaker_mismatch = self._check_speaker_attribution(finding.claim, valid_turns)
+        if speaker_mismatch:
+            validation_notes.append(speaker_mismatch)
+            return AgentFinding(
+                claim_id=finding.claim_id,
+                claim=finding.claim,
+                category=finding.category,
+                evidence_status=EvidenceStatus.CONTRADICTED,
+                supporting_segment_ids=valid_segments,
+                supporting_timestamps=matched_timestamps,
+                verbatim_citations=finding.verbatim_citations,
+                confidence_score=0.0,
+                confidence_rationale="Contradicted: Claim's explicit speaker attribution does not match the cited turn speaker.",
+                recommended_action="Contradiction alert: Verify speaker attribution before acting.",
+                validator_notes="; ".join(validation_notes),
+            )
 
         # 2. Validate Verbatim Citations & Detect Misleading Citations
         citation_matches = 0
@@ -360,6 +440,25 @@ class EvidenceValidator:
                 confidence_score=0.0,
                 confidence_rationale="Abstention: Cited transcript segment(s) do not contain factual support for this claim.",
                 recommended_action="Abstain: Insufficient transcript evidence to substantiate finding.",
+                validator_notes="; ".join(validation_notes),
+            )
+
+        recommendation_issue = self._check_recommendation_support(
+            finding.recommended_action, combined_turn_text
+        )
+        if recommendation_issue:
+            validation_notes.append(recommendation_issue)
+            return AgentFinding(
+                claim_id=finding.claim_id,
+                claim=finding.claim,
+                category=finding.category,
+                evidence_status=EvidenceStatus.INSUFFICIENT,
+                supporting_segment_ids=valid_segments,
+                supporting_timestamps=matched_timestamps,
+                verbatim_citations=finding.verbatim_citations,
+                confidence_score=0.0,
+                confidence_rationale="Abstention: Recommended action is not grounded in cited transcript evidence.",
+                recommended_action="Abstain: Proposed action lacks supporting transcript evidence.",
                 validator_notes="; ".join(validation_notes),
             )
 

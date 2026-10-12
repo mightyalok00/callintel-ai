@@ -86,6 +86,10 @@ graph TB
 1. **Customer Churn Dataset**: Supervised tabular banking dataset (`data/churn/bank_churn_cleaned.csv`, 165,031 records) for training account-level XGBoost propensity scoring with SHAP feature attributions. *Note: Tabular account data, distinct from in-call conversational modifiers.*
 2. **Demo Multi-Speaker Calls**: 4 benchmark recordings (`data/samples/*.wav`) featuring distinct voices for Agent (`David`) and Customer (`Zira`), including retention threat, sales expansion, technical outage, and additive noise stress test (+15dB SNR).
 
+### Validation and Deployment Safety
+
+The four synthesized recordings are controlled fixtures, not proof of accuracy on real customer calls. Dataset boundaries, a real-call evaluation protocol, adversarial evidence checks, deletion scope, environment-based security configuration, and the production release checklist are documented in [Validation, Evidence Quality, Retention & Production Safety](docs/VALIDATION_AND_SECURITY.md).
+
 ---
 
 ## 4. Repository & Directory Structure
@@ -99,7 +103,8 @@ callintel-ai/
 │   ├── app_config.yaml                 # Application & server configuration
 │   └── models_config.yaml              # Model hyperparameters & paths
 ├── docs/
-│   └── DATASETS_AND_MODELS.md          # Dataset acquisition, licenses, artifacts & deployment
+│   ├── DATASETS_AND_MODELS.md          # Dataset acquisition, licenses, artifacts & deployment
+│   └── VALIDATION_AND_SECURITY.md      # Real-call evaluation, evidence checks & production safety
 ├── data/
 │   ├── meld/                           # Processed MELD dataset bundled in repository
 │   │   ├── meld_train_dialogues.json   # 1,038 dialogues (9,989 turns)
