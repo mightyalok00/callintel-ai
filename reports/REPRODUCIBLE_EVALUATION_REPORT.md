@@ -88,41 +88,20 @@ The test set contains 2,610 utterances across 280 dialogues. The seven emotion c
 
 ### Overall comparison
 
-| Model | Accuracy | Macro-F1 | Weighted-F1 |
-|---|---:|---:|---:|
-| Neutral-majority baseline | 0.4812 | — | — |
-| Lexical text-only | 0.4372 | 0.3087 | 0.4461 |
-| Acoustic + text fusion | 0.4785 | 0.3334 | 0.4835 |
+| Model | Accuracy | Macro-F1 | Weighted-F1 | Validity |
+|---|---:|---:|---:|---|
+| Neutral-majority baseline | 0.4812 | — | — | Valid baseline |
+| Lexical text-only | 0.4372 | 0.3087 | 0.4461 | Text-only historical result |
+| Acoustic + text fusion | Withdrawn | Withdrawn | Withdrawn | Target leakage: acoustic inputs were synthesized from true emotion labels |
 
-The fused model improves on text-only macro-F1 by **0.0247**, but its accuracy (47.85%) remains slightly below the 48.12% majority baseline. That is a warning against describing the emotion classifier as broadly reliable.
+The previous fused result (47.85% accuracy, 0.3334 macro-F1) is **invalidated**. The old evaluation derived pitch, spectral centroid, voiced ratio, and energy from each utterance's ground-truth emotion label, then fed those values to the multimodal predictor. That leaks the target into the model inputs. The reported fused per-class metrics and confusion matrix are withdrawn for the same reason.
 
-### Fused model per-class report
+The valid text-only result (43.72% accuracy) is below the neutral-majority baseline (48.12%). This is a weak emotion classifier and should not drive consequential decisions. The corrected evaluator now runs text-only predictions and explicitly marks acoustic fusion unavailable until real audio features aligned to the held-out utterances are provided.
 
-| Emotion | Precision | Recall | F1 | Support |
-|---|---:|---:|---:|---:|
-| Anger | 0.3077 | 0.3246 | 0.3159 | 345 |
-| Disgust | 0.1500 | 0.0882 | 0.1111 | 68 |
-| Fear | 0.0725 | 0.1000 | 0.0840 | 50 |
-| Joy | 0.4065 | 0.4378 | 0.4216 | 402 |
-| Neutral | 0.6571 | 0.5812 | 0.6168 | 1,256 |
-| Sadness | 0.3080 | 0.3317 | 0.3194 | 208 |
-| Surprise | 0.4092 | 0.5374 | 0.4646 | 281 |
+### Sentiment
 
-### Confusion and failure patterns
-
-- **Neutral absorbs many non-neutral utterances.** The confusion matrix shows 143 anger, 162 joy, 74 sadness, and 104 surprise examples predicted as neutral. This is consistent with the majority class dominating predictions.
-- **Fear and disgust are not dependable.** Fear F1 is 0.0840 (50 examples) and disgust F1 is 0.1111 (68 examples). Do not use these classes alone to trigger consequential actions.
-- **Acoustic fusion helps modestly, not decisively.** Accuracy improves from 43.72% to 47.85% and macro-F1 from 0.3087 to 0.3334, but the fused model still does not exceed majority-baseline accuracy.
-- **Sentiment remains imperfect.** The positive class has precision 0.3833 and F1 0.4247; positive/negative customer intent should be checked against transcript evidence and not inferred from emotion alone.
-
-### Sentiment per-class report
-
-| Sentiment | Precision | Recall | F1 | Support |
-|---|---:|---:|---:|---:|
-| Negative | 0.5152 | 0.4874 | 0.5009 | 833 |
-| Neutral | 0.6136 | 0.5740 | 0.5932 | 1,256 |
-| Positive | 0.3833 | 0.4760 | 0.4247 | 521 |
-
+The historical text-only sentiment metrics are 52.61% accuracy and 0.5055 macro-F1. The previous fused sentiment results are withdrawn because they used the same label-derived acoustic inputs. Do not interpret these dialogue sentiment scores as call-center performance.
+ 
 ## 4. Speech benchmark: per-call results and limitations
 
 | Scenario | WER | DER | Discovered speakers | Expected speakers | RTF |
