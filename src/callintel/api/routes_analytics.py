@@ -7,7 +7,7 @@ from typing import Dict, Any
 from fastapi import APIRouter, Depends
 
 from src.callintel.services.call_analysis_service import CallAnalysisService
-from src.callintel.api.dependencies import get_call_analysis_service
+from src.callintel.api.dependencies import get_call_analysis_service, verify_api_key
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics & Telemetry"])
 
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics & Telemetry"])
 @router.get("/overview")
 async def get_analytics_overview(
     service: CallAnalysisService = Depends(get_call_analysis_service),
+    api_key: str | None = Depends(verify_api_key),
 ):
     """Returns aggregated contact-center KPIs, churn distributions, and compliance rates."""
     calls = service.list_calls(limit=100)
