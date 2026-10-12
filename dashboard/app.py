@@ -126,21 +126,50 @@ with st.sidebar:
 
     active_audio_path = get_audio_path_for_call(report_data.get("call_id", ""))
 
+    # Session Management: New Call & Delete History Buttons
+    call_btn_col1, call_btn_col2 = st.columns(2)
+    with call_btn_col1:
+        if st.button("➕ New Call", use_container_width=True, help="Switch to Live Audio Studio to upload and analyze a new call"):
+            st.session_state.workspace_view = "🎙️ Live Audio Studio"
+            st.rerun()
+    with call_btn_col2:
+        if st.button("🗑️ Delete History", use_container_width=True, help="Purge generated call sessions and reset to default demo calls"):
+            purged = 0
+            for p in REPORTS_DIR.glob("*_intelligence_report.json"):
+                cid = p.stem.replace("_intelligence_report", "")
+                if cid not in ["CALL_2026_APEX_001", "CALL_2026_SALES_002", "CALL_2026_TECH_003"]:
+                    try:
+                        p.unlink()
+                        purged += 1
+                    except Exception:
+                        pass
+            st.session_state.chat_history = []
+            st.session_state.dispatched_actions = set()
+            st.session_state.active_call_label = None
+            st.cache_data.clear()
+            st.toast(f"✅ Deleted {purged} custom call report(s) and cleared history!", icon="🗑️")
+            st.rerun()
+
     st.markdown("---")
 
     # 2. Section Navigation
+    workspace_views = [
+        "📊 Executive Overview",
+        "🔍 Call Explorer & Timeline",
+        "🎯 Retention & SHAP Risk Center",
+        "🤖 Multi-Agent Decision Hub",
+        "🏥 Model Health & Benchmark Suite",
+        "🎙️ Live Audio Studio",
+    ]
+    cur_view = st.session_state.get("workspace_view", "📊 Executive Overview")
+    default_view_idx = workspace_views.index(cur_view) if cur_view in workspace_views else 0
+
     nav_option = st.radio(
         "Workspace View",
-        [
-            "📊 Executive Overview",
-            "🔍 Call Explorer & Timeline",
-            "🎯 Retention & SHAP Risk Center",
-            "🤖 Multi-Agent Decision Hub",
-            "🏥 Model Health & Benchmark Suite",
-            "🎙️ Live Audio Studio",
-        ],
-        index=0,
+        workspace_views,
+        index=default_view_idx,
     )
+    st.session_state.workspace_view = nav_option
 
     st.markdown("---")
     st.markdown("### 🎛️ **Operational & Dialogue Filters**")
@@ -739,24 +768,56 @@ elif nav_option == "🤖 Multi-Agent Decision Hub":
     # GROUNDED MULTI-AGENT CHAT ASSISTANT ("CHAT WITH THE CALL")
     # ==========================================================================
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### 💬 **Grounded Multi-Agent Assistant (Chat with the Call)**")
+    chat_hdr_col1, chat_hdr_col2, chat_hdr_col3 = st.columns([3, 1, 1])
+    with chat_hdr_col1:
+        st.markdown("### 💬 **Grounded Multi-Agent Assistant (Chat with the Call)**")
+    with chat_hdr_col2:
+        if st.button("➕ New Chat", use_container_width=True, help="Start a new chat conversation"):
+            st.session_state.chat_history = []
+            st.session_state.preset_query_text = ""
+            st.rerun()
+    with chat_hdr_col3:
+        if st.button("🗑️ Delete History", key="del_chat_hist_btn", use_container_width=True, help="Clear all chat message history"):
+            st.session_state.chat_history = []
+            st.session_state.preset_query_text = ""
+            st.toast("Chat history cleared!", icon="🗑️")
+            st.rerun()
+
     st.markdown("Ask natural language questions about this call. The assistant verifies claims directly against the **Evidence Ledger**.")
+
+    # Render previous conversation history
+    if st.session_state.chat_history:
+        for chat_msg in st.session_state.chat_history:
+            with st.chat_message(chat_msg["role"]):
+                st.markdown(chat_msg["content"], unsafe_allow_html=True)
+                if chat_msg.get("citations"):
+                    for mq in chat_msg["citations"]:
+                        st.markdown(
+                            f"""
+                            <div class="evidence-quote-box">
+                                <span class="evidence-timestamp">[{mq['start_time']} ➔ {mq['end_time']}] {mq['speaker']}:</span>
+                                <div style="font-size:0.95rem; color:#ffffff; margin-top:4px;">"{mq['verbatim_quote']}"</div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
 
     # Quick prompt buttons
     st.markdown("<b>Quick Queries:</b>", unsafe_allow_html=True)
     qp_col1, qp_col2, qp_col3 = st.columns(3)
-    preset_query = None
+    active_prompt_query = None
     if qp_col1.button("💸 Did the customer object to price?"):
-        preset_query = "price pricing expensive cost"
+        active_prompt_query = "Did the customer object to the price?"
     if qp_col2.button("⚠️ Was cancellation threatened?"):
-        preset_query = "cancel cancellation stop subscription"
+        active_prompt_query = "Was cancellation threatened by the customer?"
     if qp_col3.button("🎁 What discounts or offers were made?"):
-        preset_query = "discount loyalty offer annual"
+        active_prompt_query = "What discounts or loyalty offers were proposed by the agent?"
 
-    user_query = st.text_input("Ask a question about this call:", placeholder="e.g. Did Alex offer a loyalty discount?", value="" if not preset_query else preset_query)
+    user_query = st.chat_input("Ask a question about this call...")
+    query_to_process = user_query or active_prompt_query
 
-    if user_query:
-        query_terms = [t.lower() for t in user_query.split() if len(t) > 2]
+    if query_to_process:
+        query_terms = [t.lower() for t in query_to_process.split() if len(t) > 2 and t.lower() not in ["the", "did", "was", "what", "were", "about", "this", "call"]]
         ledger = report_data.get("evidence_ledger", [])
         matched_quotes = []
 
@@ -765,25 +826,20 @@ elif nav_option == "🤖 Multi-Agent Decision Hub":
             if any(term in quote.lower() for term in query_terms):
                 matched_quotes.append(item)
 
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        st.markdown(f"**Answering**: *\"{user_query}\"*")
-
+        # Build Assistant Response
         if matched_quotes:
-            st.markdown(f"Found **{len(matched_quotes)}** verified citations matching your query in the Evidence Ledger:")
-            for mq in matched_quotes[:3]:
-                st.markdown(
-                    f"""
-                    <div class="evidence-quote-box">
-                        <span class="evidence-timestamp">[{mq['start_time']} ➔ {mq['end_time']}] {mq['speaker']}:</span>
-                        <div style="font-size:0.95rem; color:#ffffff; margin-top:4px;">"{mq['verbatim_quote']}"</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            st.markdown(f"✅ **Grounding Verification**: High confidence citation derived strictly from verbatim acoustic turns.")
+            ans_text = f"Found **{len(matched_quotes)}** verified citation(s) in the Evidence Ledger supporting this query.<br>✅ **Grounding Verification**: High confidence citation derived strictly from verbatim acoustic turns."
         else:
-            st.info("No direct keyword match found in transcript turns. Check broader terms or verify other call scenarios.")
-        st.markdown("</div>", unsafe_allow_html=True)
+            ans_text = "No direct keyword match found in transcript turns. Check broader terms or verify other call scenarios."
+
+        # Save to chat history
+        st.session_state.chat_history.append({"role": "user", "content": query_to_process})
+        st.session_state.chat_history.append({
+            "role": "assistant",
+            "content": ans_text,
+            "citations": matched_quotes[:3],
+        })
+        st.rerun()
 
     # Action Recommendations
     st.markdown("<br>", unsafe_allow_html=True)

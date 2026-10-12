@@ -74,3 +74,20 @@ class CallRepository:
             record.status = "FAILED"
             record.metadata_payload = {"error": error_msg}
             db.commit()
+
+    def delete_call(self, call_id: str) -> bool:
+        """Deletes a specific call record from the database."""
+        db = self._get_db()
+        record = db.query(CallRecord).filter(CallRecord.call_id == call_id).first()
+        if record:
+            db.delete(record)
+            db.commit()
+            return True
+        return False
+
+    def clear_history(self) -> int:
+        """Deletes all stored call records, returning the count of removed records."""
+        db = self._get_db()
+        count = db.query(CallRecord).delete()
+        db.commit()
+        return count

@@ -281,3 +281,39 @@ async def get_call_insights(
         "recommendations": record.recommendations or [],
         "metadata": record.metadata_payload or {},
     }
+
+
+@router.delete("/history")
+async def delete_all_call_history(
+    service: CallAnalysisService = Depends(get_call_analysis_service),
+    api_key: Optional[str] = Depends(verify_api_key),
+):
+    """
+    Purges all call records and temporary staged upload files from the system.
+    """
+    deleted_count = service.clear_history()
+    # Clean up staged files
+    purged_files = cleanup_stale_uploads(max_age_hours=0)
+    return {
+        "status": "SUCCESS",
+        "message": f"Successfully deleted call history. Cleared {deleted_count} record(s) and {purged_files} file(s).",
+        "deleted_records": deleted_count,
+        "purged_files": purged_files,
+    }
+
+
+@router.delete("/{call_id}")
+async def delete_call_record(
+    call_id: str,
+    service: CallAnalysisService = Depends(get_call_analysis_service),
+    api_key: Optional[str] = Depends(verify_api_key),
+):
+    """Deletes a specific call record by ID."""
+    success = service.delete_call(call_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Call record not found.")
+    return {
+        "status": "SUCCESS",
+        "message": f"Call record {call_id} deleted successfully.",
+        "call_id": call_id,
+    }

@@ -127,3 +127,29 @@ def test_upload_enforces_api_key_when_required(monkeypatch):
         )
     assert success_resp.status_code == 202
 
+
+def test_delete_call_and_clear_history():
+    # 1. Upload a call
+    with open(SAMPLE_WAV, "rb") as f:
+        resp = client.post(
+            "/api/v1/calls/upload",
+            files={"file": ("test_del.wav", f, "audio/wav")},
+        )
+    assert resp.status_code == 202
+    call_id = resp.json()["call_id"]
+
+    # 2. Delete this specific call
+    del_resp = client.delete(f"/api/v1/calls/{call_id}")
+    assert del_resp.status_code == 200
+    assert del_resp.json()["status"] == "SUCCESS"
+
+    # 3. Deleting non-existent call returns 404
+    del_404 = client.delete(f"/api/v1/calls/{call_id}")
+    assert del_404.status_code == 404
+
+    # 4. Clear all call history
+    clear_resp = client.delete("/api/v1/calls/history")
+    assert clear_resp.status_code == 200
+    assert clear_resp.json()["status"] == "SUCCESS"
+
+

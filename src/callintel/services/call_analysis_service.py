@@ -131,3 +131,11 @@ class CallAnalysisService:
             "pending_calls": pending,
             "mean_churn_probability": avg_churn,
         }
+
+    def delete_call(self, call_id: str) -> bool:
+        """Deletes a call from database records."""
+        return self.repo.delete_call(call_id)
+
+    def clear_history(self) -> int:
+        """Purges all call records from database."""
+        return self.repo.clear_history()
