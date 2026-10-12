@@ -48,11 +48,14 @@ def test_history_cleanup_removes_staged_uploads_but_preserves_shared_reports(
 
     (uploads / "CALL_ABC123_customer.wav").write_text("audio", encoding="utf-8")
     (uploads / "orphaned_partial_upload.tmp").write_text("partial", encoding="utf-8")
+    call_report = reports / "call_report_CALL_ABC123.json"
+    call_report.write_text("delete", encoding="utf-8")
     shared_report = reports / "benchmark_summary.html"
     shared_report.write_text("keep", encoding="utf-8")
 
     deleted = cleanup_runtime_artifacts()
 
-    assert deleted == 2
+    assert deleted == 3
     assert list(uploads.iterdir()) == []
+    assert not call_report.exists()
     assert shared_report.exists()
