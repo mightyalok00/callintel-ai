@@ -11,7 +11,18 @@
 
 **Live app:** [callintel-ai.streamlit.app](https://callintel-ai.streamlit.app/)
 
----
+## Try the live demo
+
+Open the [CallIntel AI dashboard](https://callintel-ai.streamlit.app/) to explore the executive overview, sample call scenarios, sentiment timeline, retention-risk/SHAP view, multi-agent decision hub, model benchmarks, and evidence ledger. The hosted demo is intended for exploration; the included call scenarios and reported speech scores are controlled fixtures, not evidence of performance on real customer calls. Avoid uploading sensitive or personally identifiable call recordings to a public demo.
+
+**Evaluation and reproducibility:** [Reproducible Evaluation Report](reports/REPRODUCIBLE_EVALUATION_REPORT.md) · [Machine-readable ML metrics](reports/ml_evaluation_benchmark.json) · [Speech benchmark report](reports/SPEECH_BENCHMARK.md)
+
+### Dashboard preview
+
+![Illustrative CallIntel AI dashboard preview](docs/images/callintel-dashboard-preview.svg)
+
+<sub>This is an illustrative dashboard preview, not a screenshot captured from the deployed application. Open the live demo above to see the running interface.</sub>
+
 ---
 
 ## 1. Executive Summary & Design Scope
@@ -193,7 +204,7 @@ callintel-ai/
 
 - **Engine**: `faster-whisper` (`base` model, int8 CPU) + `AcousticDiarizer` (34-dim acoustic vector: F0 pitch, 13 MFCC means & stds, spectral centroid, rolloff, RMS).
 - **Clustering**: $L_2$-normalized Cosine Agglomerative Clustering with unsupervised automatic speaker count discovery ($k^*$) via Cosine Silhouette scoring and temporal continuity smoothing.
-- **Scope**: Multi-scenario evaluation across 4 test calls (retention threat, sales expansion, fast technical escalation, +15dB SNR additive office noise). See full report at [SPEECH_BENCHMARK_REPORT.md](reports/SPEECH_BENCHMARK_REPORT.md).
+- **Scope**: Multi-scenario evaluation across 4 test calls (retention threat, sales expansion, fast technical escalation, +15dB SNR additive office noise). See full report at [SPEECH_BENCHMARK.md](reports/SPEECH_BENCHMARK.md).
 - **Measured Metrics (Controlled Multi-Scenario Benchmark)**:
   - **Mean Word Error Rate (WER)**: `1.03%`
   - **Mean Diarization Error Rate (DER)**: `0.00%` (NIST RT-09 standard with $\pm 0.25$s forgiveness collar)
@@ -250,7 +261,7 @@ pip install -r requirements.txt
 pytest tests/ -v
 ```
 
-*Expected: 44 passed tests across speech diarization, ML models, evidence validator, multi-agent supervisor, and hardened FastAPI REST/WebSocket endpoints.*
+*See the latest [CI workflow run](https://github.com/mightyalok00/callintel-ai/actions/workflows/ci.yml) for the current test count and result.*
 
 ### 3. Launch the FastAPI Service
 
