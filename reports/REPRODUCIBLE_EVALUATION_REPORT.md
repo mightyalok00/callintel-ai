@@ -127,10 +127,10 @@ The fused model improves on text-only macro-F1 by **0.0247**, but its accuracy (
 
 | Scenario | WER | DER | Discovered speakers | Expected speakers | RTF |
 |---|---:|---:|---:|---:|---:|
-| Retention call | 1.0% | 0.0% | 2 | 2 | 0.130 |
-| Sales expansion | 0.0% | 0.0% | 3 | 2 | 0.072 |
-| Technical escalation | 2.11% | 0.0% | 3 | 2 | 0.081 |
-| Additive-noise stress | 1.0% | 0.0% | 2 | 2 | 0.075 |
+| Retention call | 1.0% | Not measured | 2 | 2 | 0.130 |
+| Sales expansion | 0.0% | Not measured | 3 | 2 | 0.072 |
+| Technical escalation | 2.11% | Not measured | 3 | 2 | 0.081 |
+| Additive-noise stress | 1.0% | Not measured | 2 | 2 | 0.075 |
 
 DER is not measured: the reference turns in this fixture set do not include time boundaries, so the implementation cannot score missed speech, false alarms, or collar-adjusted speaker confusion. The earlier 0.00% DER figure was unsupported and has been withdrawn. Speaker-count accuracy is 2/4 (50%).
 
