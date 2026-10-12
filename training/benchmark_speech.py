@@ -352,6 +352,10 @@ def run_benchmark():
         print(f"    -> Speaker Count Discovery: k*={discovered_k} (Ground Truth: 2)")
         print(f"    -> Latency: {elapsed:.2f}s (RTF: {rtf}x, Peak Mem: {peak_mb} MB)")
 
+    # Fail clearly rather than writing NaN metrics when fixtures are missing.
+    if not benchmark_results:
+        raise RuntimeError(f"No speech fixtures were benchmarked. Expected WAV files in {SAMPLES_DIR.resolve()}")
+
     # Compute aggregate statistics
     avg_wer = round(float(np.mean([r["wer"] for r in benchmark_results])), 4)
     avg_speaker_attribution_error = round(float(np.mean([r["speaker_attribution_error_rate"] for r in benchmark_results])), 4) if benchmark_results else None
@@ -393,11 +397,11 @@ Diarizer: `AcousticDiarizer (34-dim acoustic vector: F0 pitch, 13 MFCC means & s
 
 | Metric | Measured Value | Industry Target | Status |
 | :--- | :--- | :--- | :--- |
-| **Mean Word Error Rate (WER)** | **{avg_wer * 100:.2f}%** | < 15.0% | **PASSED (Multi-Scenario Tested)** |
+| **Mean Word Error Rate (WER)** | **{avg_wer * 100:.2f}%** | < 15.0% | **Controlled-fixture result only** |
 | **Speaker attribution proxy (not DER)** | **{avg_speaker_attribution_error * 100:.2f}%** | Diagnostic only | **Not a DER score** |
-| **Speaker Count Discovery ($k^*$)** | **{summary_data['summary']['speaker_discovery_accuracy'] * 100:.1f}%** | > 85.0% | **PASSED (Cosine Silhouette)** |
-| **Real-Time Factor (RTF)** | **{avg_rtf}x** | < 1.0x (faster than real-time) | **PASSED (High Throughput)** |
-| **Peak Memory Footprint** | **{avg_peak_mem} MB** | < 1,024 MB | **PASSED (Edge/CPU Deployable)** |
+| **Speaker Count Discovery ($k^*$)** | **{summary_data['summary']['speaker_discovery_accuracy'] * 100:.1f}%** | > 85.0% | **Below target if discovery accuracy is under 85%** |
+| **Real-Time Factor (RTF)** | **{avg_rtf}x** | < 1.0x (faster than real-time) | **Measured on this environment** |
+| **Peak Memory Footprint** | **{avg_peak_mem} MB** | < 1,024 MB | **Measured on this environment** |
 
 > [!NOTE]
 > **Controlled Benchmark Fixture vs In-the-Wild Telephony**:
