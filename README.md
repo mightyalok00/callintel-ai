@@ -1,4 +1,11 @@
 # AI Call Intelligence Engine
+
+[![CallIntel AI CI Pipeline](https://github.com/mightyalok00/callintel-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/mightyalok00/callintel-ai/actions/workflows/ci.yml)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.42-FF4B4B.svg)](https://streamlit.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > **Turn customer conversations into actionable business intelligence — not just transcripts.**
 
 ---
@@ -8,6 +15,7 @@
 The **AI Call Intelligence Engine** is a comprehensive Data Science, Speech AI, Predictive ML, and Multi-Agent platform designed to analyze recorded and live customer calls across **Customer Support**, **Sales**, and **Retention**.
 
 ### Core Choices
+
 - **Input Channels**: Both recorded call audio files (`.wav`, `.mp3`) and live microphone/browser streaming via WebSocket.
 - **Target Domains**: Customer Support (ticket categorization, escalation, QA), Sales (buying signals, objections, competitor tracking), Retention (cancellation risk, churn mitigation).
 - **Deployment**: Hybrid architecture — local-first models (`faster-whisper`, scikit-learn, XGBoost, local Ollama) with seamless optional cloud LLM API fallback.
@@ -61,6 +69,7 @@ graph TB
 ## 3. Dataset Architecture
 
 ### Primary Dataset: MELD (`D:\MELD-master`)
+
 - **Location**: `D:\MELD-master\data\MELD`
 - **Volume**: 13,708 utterances across 1,432 dialogues.
   - **Train**: 9,989 utterances (1,038 dialogues)
@@ -73,6 +82,7 @@ graph TB
 - **Ingestion**: Automated via `training/ingest_meld.py` into `data/meld/`.
 
 ### Supplementary Datasets
+
 1. **Commercial Call Intent Dataset**: 10-class intent taxonomy (Pricing Objections, Cancellation Warnings, Feature Requests, Bug Reports, Account Access, Upgrade Inquiries, Competitor Comparisons, Service Complaints, Product Questions, General Inquiries).
 2. **Customer Churn Dataset**: Supervised tabular dataset (`bank_churn_cleaned.csv`) for training XGBoost risk scoring with SHAP feature attributions.
 
@@ -141,6 +151,7 @@ e:\ai\
 ## 6. Model Benchmarks & Statistical Integrity
 
 ### MELD Emotion & Sentiment Classifiers
+
 - **Dataset**: MELD (13,708 conversational turns across 1,432 multi-turn dialogues).
 - **Architecture**: TF-IDF + Calibrated Linear Support Vector Machine (`SGDClassifier(loss='log_loss')`) with class balancing.
 - **Emotion Performance (7-class)**:
@@ -153,6 +164,7 @@ e:\ai\
   - Neutral / Positive / Negative Macro F1: **0.6406**
 
 ### Customer Churn Risk Model & SHAP Explainability
+
 - **Dataset**: Bank Customer Churn dataset (165,000+ customer records).
 - **Architecture**: XGBoost Gradient Boosted Decision Trees + TreeSHAP Explainer.
 - **Statistical Benchmark**:
@@ -184,6 +196,7 @@ The backend is built with **FastAPI** (`src/callintel/api/app.py`) and backed by
 ## 8. Quickstart & Verification Guide
 
 ### 1. Local Environment Setup
+
 ```bash
 # Clone the repository
 git clone https://github.com/mightyalok00/callintel-ai.git
@@ -201,38 +214,47 @@ pip install -r requirements.txt
 ```
 
 ### 2. Run the Full Test Suite
+
 ```bash
 pytest tests/unit/ tests/api/ -v
 ```
+
 *Expected: 12 passed tests across speech, ML, agents, and FastAPI REST/WebSocket endpoints.*
 
 ### 3. Launch the FastAPI Service
+
 ```bash
 uvicorn src.callintel.api.app:app --host 0.0.0.0 --port 8000 --reload
 ```
+
 Interactive Swagger API documentation is available at `http://localhost:8000/docs`.
 
 ### 4. Launch the Executive Streamlit Dashboard
+
 ```bash
 streamlit run dashboard/app.py --server.port 8501
 ```
+
 Open `http://localhost:8501` to access:
+
 - **Call Explorer**: Audio player with synchronized transcript highlighting.
 - **Evidence Ledger**: Auditable claims linked directly to conversation turn IDs and timestamps.
 - **SHAP Retention Waterfall**: Interactive Plotly waterfall charts visualizing customer risk factors.
 - **Action Dispatcher**: One-click escalation to CRM, Slack, and Zendesk.
 
 ### 5. Run with Docker Compose
+
 ```bash
 docker-compose up --build
 ```
+
 This boots both the FastAPI backend (`port 8000`) and the Streamlit dashboard (`port 8501`) concurrently.
 
 ---
 
 ## 9. CI/CD & Automated Safeguards
 
-- **GitHub Actions Workflow** (`.github/workflows/ci.yml`): Runs on every pull request and push to `main` across Ubuntu and Windows runners.
+- **GitHub Actions Workflow** (`.github/workflows/ci.yml`): Runs on every pull request, push to `main`, and manual dispatch (`workflow_dispatch`) across Ubuntu and Windows runners.
 - **Automated Validation**:
   - Python 3.12 syntax and unit test verification.
   - REST & WebSocket API lifecycle test coverage.
