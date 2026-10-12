@@ -53,7 +53,25 @@ Retention controls currently include temporary-upload cleanup and a configurable
 
 ## 5. Authentication, access control, and privacy
 
-**Important current limitation:** authentication is configurable, but require_auth defaults to False and the API key defaults to unset. This is suitable only for local development. Do not expose the API, dashboard, or WebSocket endpoints to an untrusted network until authentication is enabled and verified for every route. Configure a unique high-entropy API key; never use a demo/default key, commit secrets, or put credentials in client-side code.
+**Important current limitation:** authentication defaults to disabled and the API key defaults to unset. This is suitable only for local development. Runtime overrides are read from environment variables. Before deployment, set CALLINTEL_REQUIRE_AUTH=true and CALLINTEL_API_KEY to a unique high-entropy secret. If authentication is enabled without a key, HTTP routes fail closed with a configuration error and WebSocket connections are rejected. Configure CALLINTEL_CORS_ORIGINS as a comma-separated list of exact trusted origins. Never use a demo/default key, commit secrets, or put credentials in client-side code.
+
+PowerShell example:
+
+```powershell
+$env:CALLINTEL_REQUIRE_AUTH = "true"
+$env:CALLINTEL_API_KEY = "replace-with-a-long-random-secret"
+$env:CALLINTEL_CORS_ORIGINS = "https://your-dashboard.example.com"
+```
+
+Linux/macOS example:
+
+```bash
+export CALLINTEL_REQUIRE_AUTH=true
+export CALLINTEL_API_KEY="replace-with-a-long-random-secret"
+export CALLINTEL_CORS_ORIGINS="https://your-dashboard.example.com"
+```
+
+The environment loader also supports CALLINTEL_DATABASE_URL, CALLINTEL_UPLOAD_DIR, CALLINTEL_REPORTS_DIR, CALLINTEL_UPLOAD_RETENTION_HOURS, and audio upload/buffer limits. See src/callintel/core/config.py for the complete supported list.
 
 Before deployment:
 
