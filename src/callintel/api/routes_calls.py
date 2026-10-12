@@ -266,6 +266,7 @@ async def upload_call_audio(
 async def get_call_status(
     call_id: str,
     service: CallAnalysisService = Depends(get_call_analysis_service),
+    api_key: Optional[str] = Depends(verify_api_key),
 ):
     """Returns processing status, metadata, and high-level KPIs for a specific call."""
     record = service.get_call(call_id)
@@ -292,6 +293,7 @@ async def get_call_status(
 async def get_call_transcript(
     call_id: str,
     service: CallAnalysisService = Depends(get_call_analysis_service),
+    api_key: Optional[str] = Depends(verify_api_key),
 ):
     """Returns timestamped dialogue turns with speaker attribution for a call."""
     record = service.get_call(call_id)
@@ -310,6 +312,7 @@ async def get_call_transcript(
 async def get_call_insights(
     call_id: str,
     service: CallAnalysisService = Depends(get_call_analysis_service),
+    api_key: Optional[str] = Depends(verify_api_key),
 ):
     """Returns the Auditable Evidence Ledger, SHAP drivers, and action recommendations."""
     record = service.get_call(call_id)
