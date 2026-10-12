@@ -605,18 +605,16 @@ def generate_markdown_report(churn_eval: Dict[str, Any], meld_eval: Dict[str, An
 
         if "lexical_text_only" in e_eval and "multimodal_acoustic_fused" in e_eval:
             lex_e = e_eval["lexical_text_only"]
-            mul_e = e_eval["multimodal_acoustic_fused"]
             lex_s = s_eval["lexical_text_only"]
-            mul_s = s_eval["multimodal_acoustic_fused"]
-            md.append("### 2.2 Multimodal Acoustic-Lexical Ablation")
+            fusion = e_eval["multimodal_acoustic_fused"]
+            md.append("### 2.2 Modality Ablation and Limitations")
             md.append("")
-            md.append("| Modality | Emotion Accuracy | Emotion Macro F1 | Sentiment Accuracy | Sentiment Macro F1 |")
-            md.append("| :--- | :---: | :---: | :---: | :---: |")
-            md.append(f"| **Lexical Text Only (TF-IDF)** | `{lex_e['accuracy']:.2%}` | `{lex_e['macro_f1']:.4f}` | `{lex_s['accuracy']:.2%}` | `{lex_s['macro_f1']:.4f}` |")
-            md.append(f"| **Multimodal Fused (Acoustic + Text)** | **`{mul_e['accuracy']:.2%}`** | **`{mul_e['macro_f1']:.4f}`** | **`{mul_s['accuracy']:.2%}`** | **`{mul_s['macro_f1']:.4f}`** |")
+            md.append(f"| **Text-only emotion** | `{lex_e['accuracy']:.2%}` accuracy | `{lex_e['macro_f1']:.4f}` macro-F1 |")
+            md.append(f"| **Text-only sentiment** | `{lex_s['accuracy']:.2%}` accuracy | `{lex_s['macro_f1']:.4f}` macro-F1 |")
             md.append("")
-            md.append("> **Acoustic Fusion Impact**: Calibrated late fusion ($0.75 \\text{ text} + 0.25 \\text{ acoustic}$) blends prosodic vocal tension (F0 pitch, spectral centroid, voiced ratio) with lexical intent, reducing false neutrality on vocally distressed customers.")
-            md.append("")
+            if not fusion.get("available", False):
+                md.append("> **Audio fusion not evaluated.** This MELD evaluation path does not load aligned audio features. Previous synthetic pitch/energy values derived from the ground-truth emotion label constituted target leakage and are no longer used. A valid multimodal comparison requires real, aligned audio features and a held-out evaluation.")
+                md.append("")
 
     md.append("---")
     md.append("")
