@@ -196,11 +196,11 @@ class EvidenceValidator:
         claim_norm = self._normalize_text(claim)
         speaker_rules = [
             (
-                r"\\b(customer|caller|client)\\b.{0,60}\\b(said|stated|confirmed|requested|asked|agreed|declined|refused|reported|complained|threatened|wants|wanted|told)\\b",
+                r"\b(customer|caller|client)\b.{0,60}\b(said|stated|confirmed|requested|asked|agreed|declined|refused|reported|complained|threatened|wants|wanted|told)\b",
                 {"customer", "caller", "client"},
             ),
             (
-                r"\\b(agent|representative|advisor)\\b.{0,60}\\b(said|stated|confirmed|requested|asked|agreed|declined|refused|reported|offered|promised|committed)\\b",
+                r"\b(agent|representative|advisor)\b.{0,60}\b(said|stated|confirmed|requested|asked|agreed|declined|refused|reported|offered|promised|committed)\b",
                 {"agent", "representative", "advisor"},
             ),
         ]
@@ -208,21 +208,13 @@ class EvidenceValidator:
             match = re.search(pattern, claim_norm)
             if not match:
                 continue
-            expected = next(
-                (word for word in expected_speakers if word in match.group(1).split()),
-                None,
-            )
+            expected = match.group(1)
             actual_speakers = {
                 str(turn.get("speaker", "")).strip().lower()
                 for turn in valid_turns
             }
-            if expected and not any(
-                speaker in actual_speakers or any(alias in speaker for alias in expected_speakers)
-                for speaker in expected_speakers
-            ):
-                return None
-            if expected and not any(
-                any(alias in speaker for alias in expected_speakers)
+            if not any(
+                any(alias == speaker or alias in speaker for alias in expected_speakers)
                 for speaker in actual_speakers
             ):
                 return (
