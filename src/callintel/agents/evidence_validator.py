@@ -319,22 +319,6 @@ class EvidenceValidator:
         valid_turn_texts = [self._normalize_text(t) for t in valid_raw_texts]
         combined_turn_text = " ".join(valid_turn_texts)
 
-        speaker_mismatch = self._check_speaker_attribution(finding.claim, valid_turns)
-        if speaker_mismatch:
-            validation_notes.append(speaker_mismatch)
-            return AgentFinding(
-                claim_id=finding.claim_id,
-                claim=finding.claim,
-                category=finding.category,
-                evidence_status=EvidenceStatus.CONTRADICTED,
-                supporting_segment_ids=valid_segments,
-                supporting_timestamps=matched_timestamps,
-                verbatim_citations=finding.verbatim_citations,
-                confidence_score=0.0,
-                confidence_rationale="Contradicted: Claim's explicit speaker attribution does not match the cited turn speaker.",
-                recommended_action="Contradiction alert: Verify speaker attribution before acting.",
-                validator_notes="; ".join(validation_notes),
-            )
 
         # 2. Validate Verbatim Citations & Detect Misleading Citations
         citation_matches = 0
@@ -442,6 +426,24 @@ class EvidenceValidator:
                 recommended_action="Abstain: Insufficient transcript evidence to substantiate finding.",
                 validator_notes="; ".join(validation_notes),
             )
+
+        speaker_mismatch = self._check_speaker_attribution(finding.claim, valid_turns)
+        if speaker_mismatch:
+            validation_notes.append(speaker_mismatch)
+            return AgentFinding(
+                claim_id=finding.claim_id,
+                claim=finding.claim,
+                category=finding.category,
+                evidence_status=EvidenceStatus.CONTRADICTED,
+                supporting_segment_ids=valid_segments,
+                supporting_timestamps=matched_timestamps,
+                verbatim_citations=finding.verbatim_citations,
+                confidence_score=0.0,
+                confidence_rationale="Contradicted: Claim's explicit speaker attribution does not match the cited turn speaker.",
+                recommended_action="Contradiction alert: Verify speaker attribution before acting.",
+                validator_notes="; ".join(validation_notes),
+            )
+
 
         recommendation_issue = self._check_recommendation_support(
             finding.recommended_action, combined_turn_text
