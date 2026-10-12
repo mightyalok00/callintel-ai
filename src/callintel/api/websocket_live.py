@@ -160,6 +160,21 @@ async def websocket_call_stream(websocket: WebSocket, session_id: str):
     - Real-time emotion & frustration alerts
     - Latency tracking & disconnect cleanup
     """
+    # WebSocket routes do not use FastAPI HTTP dependencies. Enforce the same
+    # configured API-key policy before accepting a streaming connection.
+    if settings.require_auth or settings.api_key:
+        expected = settings.api_key
+        if not expected:
+            await websocket.close(code=1011, reason="API authentication is not configured")
+            return
+        token = websocket.headers.get("x-api-key")
+        authorization = websocket.headers.get("authorization", "")
+        if not token and authorization.lower().startswith("bearer "):
+            token = authorization[7:].strip()
+        if not token or token != expected:
+            await websocket.close(code=1008, reason="Unauthorized")
+            return
+
     session = await manager.connect(session_id, websocket)
 
     try:
