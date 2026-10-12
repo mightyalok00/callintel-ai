@@ -95,21 +95,19 @@ Traditional machine learning defaults to an arbitrary `0.50` probability cutoff.
   - `disgust`: `68` (2.61%)
   - `fear`: `50` (1.92%)
 
-### 2.1 Benchmark Performance
+### 2.1 Benchmark status
 
-| Task | Majority Baseline Acc | Accuracy | Macro F1 | Weighted F1 |
-| :--- | :---: | :---: | :---: | :---: |
-| **7-Class Emotion** | `48.12%` (neutral) | `47.85%` | `0.3334` | `0.4835` |
-| **3-Class Sentiment** | `48.12%` (Neutral) | `52.68%` | `0.5063` | `0.5301` |
+The historical fused metrics in the previous version of this report are **invalidated**. The evaluator generated pitch, spectral-centroid, voiced-ratio, and energy values from the ground-truth emotion label, then passed those values to the multimodal model. That is target leakage, so the resulting score is not a valid held-out multimodal evaluation.
 
-### 2.2 Multimodal Acoustic-Lexical Ablation
+The corrected evaluation now measures text-only emotion and sentiment predictions. It does not report new numerical results here because the corrected run has not yet been verified against the current model artifacts and held-out data.
 
-| Modality | Emotion Accuracy | Emotion Macro F1 | Sentiment Accuracy | Sentiment Macro F1 |
-| :--- | :---: | :---: | :---: | :---: |
-| **Lexical Text Only (TF-IDF)** | `43.72%` | `0.3087` | `52.61%` | `0.5055` |
-| **Multimodal Fused (Acoustic + Text)** | **`47.85%`** | **`0.3334`** | **`52.68%`** | **`0.5063`** |
+| Evaluation | Status |
+| :--- | :--- |
+| Text-only emotion and sentiment | Recompute with `python training/evaluate_ml_models.py` |
+| Acoustic + text fusion | **Not evaluated** — no genuine audio features are loaded/aligned in this evaluation path |
+| Previous fused metrics (47.85% emotion accuracy; 0.3334 macro-F1) | **Withdrawn** — contaminated by target leakage |
 
-> **Acoustic Fusion Impact**: Calibrated late fusion ($0.75 \text{ text} + 0.25 \text{ acoustic}$) blends prosodic vocal tension (F0 pitch, spectral centroid, voiced ratio) with lexical intent, reducing false neutrality on vocally distressed customers.
+A valid multimodal experiment requires audio features extracted independently of labels, aligned to each held-out utterance, and a fixed split with no training/test leakage. MELD is a dialogue emotion dataset and does not by itself establish call-center telephony performance.
 
 ---
 
