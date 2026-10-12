@@ -225,44 +225,67 @@ class AcousticDiarizer:
                 },
             }]
 
-        # Step 2: Speaker clustering using pitch and acoustic features
-        # Normalize features with special emphasis on pitch and vocal spectral envelope
+        # Step 2: Gain-Invariant Feature Normalization & Metric Boosting
         scaler = StandardScaler()
-        norm_features = scaler.fit_transform(features_np)
+        std_features = scaler.fit_transform(features_np)
+        # Emphasize fundamental pitch (index 29) and vocal formant envelope (MFCC 0:5)
+        std_features[:, 29] *= 2.5
+        std_features[:, 0:5] *= 1.5
 
-        # Boost pitch feature column (index 29: pitch_mean / 100.0) and lower MFCCs
-        norm_features[:, 29] *= 2.5  # pitch_mean
-        norm_features[:, 0:5] *= 1.5 # primary formant MFCCs
+        # L2-normalize vectors for gain-invariant cosine clustering
+        norms = np.linalg.norm(std_features, axis=1, keepdims=True)
+        norm_features = std_features / np.maximum(norms, 1e-7)
 
-        n_clusters = expected_speakers or 2
-        # If segments count is small or all pitches are nearly identical, evaluate if single speaker
+        # Step 3: Automatic Speaker Count (k) Discovery or Configured Target
         pitches = [f["pitch_mean"] for f in extracted if f["pitch_mean"] > 40.0]
         pitch_spread = (max(pitches) - min(pitches)) if len(pitches) > 1 else 0.0
 
-        if len(segments) < 2 or (pitch_spread < 15.0 and len(pitches) > 2):
-            # Acoustic features indicate a single speaker monologue
+        if expected_speakers is not None:
+            n_clusters = max(1, min(expected_speakers, len(segments)))
+        elif len(segments) <= 2 or (pitch_spread < 15.0 and len(pitches) >= 2):
+            n_clusters = 1
+        else:
+            n_clusters = self._estimate_optimal_k(norm_features, max_k=min(3, len(segments) - 1))
+
+        if n_clusters == 1 or len(segments) < 2:
             cluster_labels = np.zeros(len(segments), dtype=int)
             confidences = [0.95] * len(segments)
         else:
-            # Cluster segments into n_clusters
-            kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
-            cluster_labels = kmeans.fit_predict(norm_features)
-            centers = kmeans.cluster_centers_
+            # Gain-invariant Cosine Agglomerative Clustering
+            clusterer = AgglomerativeClustering(
+                n_clusters=n_clusters,
+                metric="cosine",
+                linkage="average",
+            )
+            cluster_labels = clusterer.fit_predict(norm_features)
 
-            # Calculate acoustic confidence per segment based on distance margin to centroids
+            # Compute cluster centroids on normalized sphere
+            centers = []
+            for c_id in range(n_clusters):
+                c_mask = (cluster_labels == c_id)
+                if np.any(c_mask):
+                    centroid = np.mean(norm_features[c_mask], axis=0)
+                    centroid = centroid / np.maximum(np.linalg.norm(centroid), 1e-7)
+                    centers.append(centroid)
+                else:
+                    centers.append(np.zeros(norm_features.shape[1], dtype=np.float32))
+
+            # Calibrate confidence based on cosine margin between closest and runner-up centroids
             confidences = []
-            for i, feat_vec in enumerate(norm_features):
-                dists = [np.linalg.norm(feat_vec - c) for c in centers]
-                min_idx = np.argmin(dists)
-                d_own = dists[min_idx]
-                d_other = dists[1 - min_idx] if len(dists) == 2 else sorted(dists)[1]
-                margin = (d_other - d_own) / max(d_own + d_other, 1e-6)
-                # Calibrated confidence between 0.70 and 0.98
-                conf = min(0.98, max(0.70, 0.50 + 0.50 * (1.0 / (1.0 + np.exp(-3.0 * margin)))))
+            for feat_vec in norm_features:
+                sims = [float(np.dot(feat_vec, c)) for c in centers]
+                sorted_sims = sorted(sims, reverse=True)
+                s_best = sorted_sims[0]
+                s_second = sorted_sims[1] if len(sorted_sims) > 1 else -1.0
+                margin = (s_best - s_second)
+                # Calibrated confidence mapped to [0.70, 0.98]
+                conf = min(0.98, max(0.70, 0.50 + 0.48 * (1.0 / (1.0 + np.exp(-4.0 * margin)))))
                 confidences.append(round(float(conf), 3))
 
-        # Step 3: Conversational role attribution (Agent vs Customer)
-        # Identify which cluster initiates the customer support / company greeting
+            # Step 4: Temporal Transition Smoothing (eliminate acoustic flicker on short turns)
+            cluster_labels = self._smooth_transitions(cluster_labels, segments, confidences)
+
+        # Step 5: Conversational role attribution (Agent vs Customer)
         agent_cluster_id = 0
         greetings_agent = [
             "thank you for calling",
@@ -288,10 +311,9 @@ class AcousticDiarizer:
                 key=lambda k: cluster_greeting_scores[k],
             )
             if cluster_greeting_scores[agent_cluster_id] == 0.0:
-                # If no explicit greeting phrase, first speaking cluster is typically the agent
                 agent_cluster_id = int(cluster_labels[0])
 
-        # Step 4: Assemble finalized turns
+        # Step 6: Assemble finalized turns
         diarized_turns = []
         for i, (seg, feat, clus, conf) in enumerate(zip(segments, extracted, cluster_labels, confidences)):
             role = "Agent" if clus == agent_cluster_id else "Customer"
@@ -318,3 +340,47 @@ class AcousticDiarizer:
             diarized_turns.append(diarized_turn)
 
         return diarized_turns
+
+    def _estimate_optimal_k(self, norm_features: np.ndarray, max_k: int = 3) -> int:
+        """
+        Estimates the optimal number of speakers k in [1..max_k] using silhouette scoring on cosine distances.
+        """
+        best_k = 2
+        best_score = -1.0
+
+        for k in range(2, max_k + 1):
+            if len(norm_features) <= k:
+                continue
+            model = AgglomerativeClustering(n_clusters=k, metric="cosine", linkage="average")
+            labels = model.fit_predict(norm_features)
+            if len(set(labels)) < k:
+                continue
+            # Cosine distance matrix: D = 1 - S
+            cos_dist = np.clip(1.0 - np.dot(norm_features, norm_features.T), 0.0, 2.0)
+            score = silhouette_score(cos_dist, labels, metric="precomputed")
+            if score > best_score:
+                best_score = score
+                best_k = k
+
+        # If silhouette is very weak (< 0.15), default to 2-party standard dialogue
+        return best_k if best_score > 0.15 else 2
+
+    @staticmethod
+    def _smooth_transitions(
+        labels: np.ndarray,
+        segments: List[Dict[str, Any]],
+        confidences: List[float],
+    ) -> np.ndarray:
+        """
+        Temporal continuity smoothing: if a short utterance (< 0.8s) is sandwiched
+        between turns of the same speaker and has moderate confidence, smooth it to prevent flicker.
+        """
+        smoothed = np.copy(labels)
+        for i in range(1, len(segments) - 1):
+            dur = float(segments[i]["end_seconds"]) - float(segments[i]["start_seconds"])
+            if dur < 0.85 and confidences[i] < 0.84:
+                prev_label = smoothed[i - 1]
+                next_label = labels[i + 1]
+                if prev_label == next_label and smoothed[i] != prev_label:
+                    smoothed[i] = prev_label
+        return smoothed

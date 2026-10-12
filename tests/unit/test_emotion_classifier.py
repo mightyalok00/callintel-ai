@@ -38,3 +38,24 @@ def test_timeline_analysis():
     timeline = clf.analyze_call_timeline(turns)
     assert len(timeline) == 3
     assert timeline[2]["sentiment"]["label"] == "negative" or timeline[2]["emotion"]["label"] in ["anger", "sadness", "neutral"]
+
+
+def test_multimodal_emotion_prediction():
+    clf = MeldClassifier()
+    res = clf.predict_turn_multimodal(
+        utterance="This is completely unacceptable!",
+        speaker="Customer",
+        acoustic_metrics={
+            "mean_pitch_hz": 260.0,
+            "spectral_centroid_hz": 3100.0,
+            "voiced_ratio": 0.88,
+            "rms_energy": 0.12,
+        },
+    )
+    assert "emotion" in res
+    assert "sentiment" in res
+    assert "fusion_metadata" in res
+    assert res["fusion_metadata"]["fusion_applied"] is True
+    assert res["fusion_metadata"]["vocal_arousal_score"] > 0.60
+    assert 0.0 <= res["emotion"]["confidence"] <= 1.0
+

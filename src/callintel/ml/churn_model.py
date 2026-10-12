@@ -164,3 +164,158 @@ class ChurnRiskPredictor:
             "risk_tier": "CRITICAL" if operational_composite_risk >= 0.75 else ("ELEVATED" if operational_composite_risk >= 0.50 else ("MODERATE" if operational_composite_risk >= 0.25 else "LOW")),
             "call_multiplier": round(multiplier, 3),
         }
+
+    @staticmethod
+    def optimize_business_threshold(
+        y_true: np.ndarray,
+        y_prob: np.ndarray,
+        cost_fn: float = 1200.0,
+        cost_fp: float = 80.0,
+        save_rate: float = 0.65,
+        n_thresholds: int = 91,
+    ) -> Dict[str, Any]:
+        """Exposes static method to compute optimal business threshold."""
+        return compute_optimal_business_threshold(
+            y_true=y_true,
+            y_prob=y_prob,
+            cost_fn=cost_fn,
+            cost_fp=cost_fp,
+            save_rate=save_rate,
+            n_thresholds=n_thresholds,
+        )
+
+
+def compute_optimal_business_threshold(
+    y_true: np.ndarray,
+    y_prob: np.ndarray,
+    cost_fn: float = 1200.0,
+    cost_fp: float = 80.0,
+    save_rate: float = 0.65,
+    n_thresholds: int = 91,
+) -> Dict[str, Any]:
+    """
+    Computes Cost-Utility & Expected Monetary Value (EMV) curve across decision cutoffs.
+
+    Decision Economics:
+      - Cost of False Negative (FN): Losing an at-risk customer without proactive outreach = $LTV ($1,200).
+      - Cost of False Positive (FP): Outbound incentive concession to a non-churner = $Offer ($80).
+      - True Positive (TP): Customer flagged & outreach deployed. Successfully retained with probability
+        save_rate (0.65). Net benefit = save_rate * cost_fn - cost_fp = 0.65 * $1200 - $80 = $700.
+      - False Negative (FN): At-risk customer unflagged, churns = -$1,200.
+      - False Positive (FP): Offer concession wasted = -$80.
+      - True Negative (TN): Retained naturally with zero cost = $0.
+
+    Returns full threshold curve, optimal threshold t*, and business lift vs naive 0.50 cutoff.
+    """
+    y_true_arr = np.asarray(y_true, dtype=int)
+    y_prob_arr = np.asarray(y_prob, dtype=float)
+    total_samples = len(y_true_arr)
+    if total_samples == 0:
+        raise ValueError("Cannot compute threshold optimization on empty sample arrays.")
+
+    total_positives = int(np.sum(y_true_arr == 1))
+    total_negatives = int(np.sum(y_true_arr == 0))
+    do_nothing_loss = total_positives * cost_fn
+
+    thresholds = np.linspace(0.05, 0.95, n_thresholds)
+    curve_points = []
+    best_emv = -float("inf")
+    best_threshold = 0.50
+    best_metrics: Dict[str, Any] = {}
+
+    naive_metrics: Dict[str, Any] = {}
+
+    for t in thresholds:
+        pred_pos = y_prob_arr >= t
+        tp = int(np.sum(pred_pos & (y_true_arr == 1)))
+        fp = int(np.sum(pred_pos & (y_true_arr == 0)))
+        fn = int(np.sum((~pred_pos) & (y_true_arr == 1)))
+        tn = int(np.sum((~pred_pos) & (y_true_arr == 0)))
+
+        # Intervention cost model
+        intervention_cost = (tp + fp) * cost_fp
+        unprevented_churn_loss = fn * cost_fn + tp * (1.0 - save_rate) * cost_fn
+        total_cost = intervention_cost + unprevented_churn_loss
+
+        # Net monetary savings relative to zero-action baseline
+        net_savings = do_nothing_loss - total_cost
+        savings_per_1000 = (net_savings / total_samples) * 1000.0
+
+        prec = float(tp / (tp + fp)) if (tp + fp) > 0 else 0.0
+        rec = float(tp / (tp + fn)) if (tp + fn) > 0 else 0.0
+        f1 = float(2 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
+
+        point = {
+            "threshold": round(float(t), 3),
+            "tp": tp,
+            "fp": fp,
+            "fn": fn,
+            "tn": tn,
+            "precision": round(prec, 4),
+            "recall": round(rec, 4),
+            "f1": round(f1, 4),
+            "total_cost": round(float(total_cost), 2),
+            "net_savings": round(float(net_savings), 2),
+            "savings_per_1000": round(float(savings_per_1000), 2),
+        }
+        curve_points.append(point)
+
+        if net_savings > best_emv:
+            best_emv = net_savings
+            best_threshold = float(t)
+            best_metrics = point
+
+        # Track naive 0.50
+        if abs(t - 0.50) < 0.006:
+            naive_metrics = point
+
+    if not naive_metrics and curve_points:
+        naive_metrics = curve_points[len(curve_points) // 2]
+
+    lift_over_naive_total = best_metrics["net_savings"] - naive_metrics["net_savings"]
+    lift_per_1000 = (lift_over_naive_total / total_samples) * 1000.0
+
+    return {
+        "financial_parameters": {
+            "cost_fn_ltv": cost_fn,
+            "cost_fp_retention_offer": cost_fp,
+            "save_rate_probability": save_rate,
+            "total_evaluated_accounts": total_samples,
+            "churn_prevalence": round(float(total_positives / total_samples), 4),
+            "do_nothing_baseline_loss": round(float(do_nothing_loss), 2),
+        },
+        "optimal_business_cutoff": {
+            "threshold": round(best_threshold, 3),
+            "net_savings": best_metrics["net_savings"],
+            "savings_per_1000_accounts": best_metrics["savings_per_1000"],
+            "precision": best_metrics["precision"],
+            "recall": best_metrics["recall"],
+            "f1_score": best_metrics["f1"],
+            "true_positives": best_metrics["tp"],
+            "false_positives": best_metrics["fp"],
+            "false_negatives": best_metrics["fn"],
+        },
+        "naive_cutoff_0_50": {
+            "threshold": naive_metrics["threshold"],
+            "net_savings": naive_metrics["net_savings"],
+            "savings_per_1000_accounts": naive_metrics["savings_per_1000"],
+            "precision": naive_metrics["precision"],
+            "recall": naive_metrics["recall"],
+            "f1_score": naive_metrics["f1"],
+            "true_positives": naive_metrics["tp"],
+            "false_positives": naive_metrics["fp"],
+            "false_negatives": naive_metrics["fn"],
+        },
+        "business_lift_analysis": {
+            "net_monetary_lift_total": round(lift_over_naive_total, 2),
+            "net_monetary_lift_per_1000_accounts": round(lift_per_1000, 2),
+            "recall_gain_percentage": round((best_metrics["recall"] - naive_metrics["recall"]) * 100.0, 2),
+            "recommendation": (
+                f"Deploy operational threshold at t*={best_threshold:.2f} rather than naive 0.50. "
+                f"Yields an extra ${lift_per_1000:,.2f} in net retained LTV per 1,000 customer accounts "
+                f"by capturing {best_metrics['recall']*100:.1f}% of churners (vs {naive_metrics['recall']*100:.1f}% at 0.50)."
+            ),
+        },
+        "emv_curve": curve_points,
+    }
+

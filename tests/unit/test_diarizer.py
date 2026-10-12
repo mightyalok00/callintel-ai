@@ -79,3 +79,22 @@ def test_single_speaker_handling():
     assert len(diarized) == 1
     assert diarized[0]["speaker"] == "Agent"
     assert diarized[0]["speaker_cluster_id"] == "SPEAKER_00"
+
+
+def test_automatic_speaker_k_estimation():
+    assert SAMPLE_WAV.exists()
+    audio, sr, _ = load_and_normalize_audio(SAMPLE_WAV)
+    diarizer = AcousticDiarizer(target_sample_rate=sr)
+
+    mock_segments = [
+        {"start_seconds": 0.0, "end_seconds": 3.5, "start_time": "00:00:00.000", "end_time": "00:00:03.500", "utterance": "Hello thank you for calling support."},
+        {"start_seconds": 7.5, "end_seconds": 11.5, "start_time": "00:00:07.500", "end_time": "00:00:11.500", "utterance": "Hi I need help with my account."},
+        {"start_seconds": 17.0, "end_seconds": 21.0, "start_time": "00:00:17.000", "end_time": "00:00:21.000", "utterance": "Sure I can look into that for you."},
+        {"start_seconds": 27.0, "end_seconds": 30.5, "start_time": "00:00:27.000", "end_time": "00:00:30.500", "utterance": "Thank you so much."},
+    ]
+
+    # Call with expected_speakers=None to trigger automatic discovery
+    diarized = diarizer.diarize_segments(audio, mock_segments, expected_speakers=None)
+    assert len(diarized) == 4
+    discovered_speakers = {t["speaker"] for t in diarized}
+    assert len(discovered_speakers) >= 1

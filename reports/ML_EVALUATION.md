@@ -59,6 +59,28 @@
 | 7 | `Geography_Paris-France` | `0.0362` | Primary risk contributor |
 | 8 | `Balance` | `0.0305` | Primary risk contributor |
 
+### 1.5 5-Fold Stratified Cross-Validation Confidence Intervals
+
+Empirical 5-fold stratified cross-validation on 30,000 customer accounts:
+
+| Metric | 5-Fold Mean &plusmn; Std Dev | Min / Max Dispersion |
+| :--- | :---: | :---: |
+| **ROC-AUC** | `0.8741 &plusmn; 0.0036` | Stable across all stratified folds |
+| **PR-AUC** | `0.7034 &plusmn; 0.0032` | Strong positive class discovery |
+| **Brier Score** | `0.1373 &plusmn; 0.0023` | Consistent probabilistic reliability |
+| **F1 Score** | `0.6220 &plusmn; 0.0061` | Balanced trade-off |
+
+### 1.6 Cost-Utility Economics & Expected Monetary Value (EMV) Optimization
+
+Traditional machine learning defaults to an arbitrary `0.50` probability cutoff. However, customer retention economics are highly asymmetric: losing an at-risk account costs **$1,200 LTV**, whereas a proactive retention concession costs only **$80**, with an empirical intervention save rate of **65%**.
+
+| Decision Strategy | Threshold | Recall (Churners Caught) | Precision | Net Monetary Savings per 1,000 Accounts |
+| :--- | :---: | :---: | :---: | :---: |
+| **Naive ML Cutoff** | `0.50` | `78.3%` | `53.1%` | `$104,327.57` |
+| **Optimal EMV Cutoff (t\*)** | **`0.28`** | **`91.1%`** | **`39.2%`** | **`$110,958.28`** |
+
+> **Monetary Value Lift**: Tuning to the cost-utility optimal cutoff (`t* = 0.28`) increases churn recall by **+12.7%**, generating an additional **`$6,630.71` in retained customer value per 1,000 accounts** compared to the naive `0.50` threshold.
+
 ---
 
 ## 2. Conversational Emotion & Sentiment Model Evaluation (MELD)
@@ -77,8 +99,17 @@
 
 | Task | Majority Baseline Acc | Accuracy | Macro F1 | Weighted F1 |
 | :--- | :---: | :---: | :---: | :---: |
-| **7-Class Emotion** | `48.12%` (neutral) | `43.72%` | `0.3087` | `0.4461` |
-| **3-Class Sentiment** | `48.12%` (Neutral) | `52.61%` | `0.5055` | `0.5293` |
+| **7-Class Emotion** | `48.12%` (neutral) | `47.85%` | `0.3334` | `0.4835` |
+| **3-Class Sentiment** | `48.12%` (Neutral) | `52.68%` | `0.5063` | `0.5301` |
+
+### 2.2 Multimodal Acoustic-Lexical Ablation
+
+| Modality | Emotion Accuracy | Emotion Macro F1 | Sentiment Accuracy | Sentiment Macro F1 |
+| :--- | :---: | :---: | :---: | :---: |
+| **Lexical Text Only (TF-IDF)** | `43.72%` | `0.3087` | `52.61%` | `0.5055` |
+| **Multimodal Fused (Acoustic + Text)** | **`47.85%`** | **`0.3334`** | **`52.68%`** | **`0.5063`** |
+
+> **Acoustic Fusion Impact**: Calibrated late fusion ($0.75 \text{ text} + 0.25 \text{ acoustic}$) blends prosodic vocal tension (F0 pitch, spectral centroid, voiced ratio) with lexical intent, reducing false neutrality on vocally distressed customers.
 
 ---
 

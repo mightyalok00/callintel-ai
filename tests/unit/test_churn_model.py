@@ -51,3 +51,20 @@ def test_churn_prediction_with_shap():
     assert "feature" in drivers[0]
     assert "impact" in drivers[0]
     assert "direction" in drivers[0]
+
+
+def test_business_threshold_optimization():
+    import numpy as np
+    from src.callintel.ml.churn_model import compute_optimal_business_threshold
+
+    y_true = np.array([1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
+    y_prob = np.array([0.9, 0.8, 0.7, 0.35, 0.4, 0.2, 0.1, 0.05, 0.15, 0.02])
+
+    res = compute_optimal_business_threshold(y_true, y_prob, cost_fn=1200.0, cost_fp=80.0, save_rate=0.65)
+    assert "optimal_business_cutoff" in res
+    assert "naive_cutoff_0_50" in res
+    assert "business_lift_analysis" in res
+    assert "emv_curve" in res
+    assert 0.05 <= res["optimal_business_cutoff"]["threshold"] <= 0.95
+    assert res["optimal_business_cutoff"]["net_savings"] >= res["naive_cutoff_0_50"]["net_savings"]
+
