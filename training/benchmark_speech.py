@@ -410,16 +410,9 @@ Diarizer: `AcousticDiarizer (34-dim acoustic vector: F0 pitch, 13 MFCC means & s
 
 ---
 
-## 2. Speaker-attribution diagnostic limitations
+## 2. Diarization metric limitation
 
-A valid DER requires time-aligned reference speech regions and scoring missed speech, false alarms, speaker confusion, and a declared collar convention. The bundled reference turns contain text and speaker labels but no reference timestamps, so this script deliberately reports a null DER. The text-overlap speaker-attribution proxy is diagnostic only and must not be called DER. Historical methodology text below does not describe the implemented metric:
-1. **Collar Tolerance**: $\\pm 0.250$s forgiveness window placed at speaker transition boundaries to accommodate acoustic pause overlaps.
-2. **Formula**:
-   $$\\text{{DER}} = \\frac{{\\text{{Missed Speech}} + \\text{{False Alarm}} + \\text{{Speaker Confusion}}}}{{\\text{{Total Reference Speech Duration}}}}$$
-3. **Speaker Mapping**: Optimal Hungarian 1-to-1 mapping matching acoustic cluster labels to ground truth speakers (`Agent`, `Customer`).
-4. **Automatic Speaker Count Discovery ($k^*$)**: When speaker count is unprovided, Silhouette scoring on Cosine distance across $k \\in [1, 3]$ automatically estimates optimal cluster count.
-
----
+A valid diarization error rate (DER) requires time-aligned reference speech regions and scoring for missed speech, false alarms, speaker confusion, and the selected collar convention. The reference turns in this repository contain text and speaker labels but no reference timestamps. DER is therefore not measured. The script writes `der: null` and reports a separate text-overlap speaker-attribution diagnostic, which is not DER and must not be compared with published DER targets.
 
 ## 3. Detailed Call-Level Benchmark Breakdown
 
