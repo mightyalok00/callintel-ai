@@ -119,6 +119,11 @@ with st.sidebar:
     st.session_state.active_call_label = selected_call_label
     active_report_path = report_options[selected_call_label]
     report_data = load_report(str(active_report_path))
+    if report_data is None:
+        st.error(f"Intelligence report could not be loaded from {active_report_path}.")
+        st.stop()
+    assert report_data is not None
+
     active_audio_path = get_audio_path_for_call(report_data.get("call_id", ""))
 
     st.markdown("---")

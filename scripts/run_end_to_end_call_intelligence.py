@@ -132,10 +132,11 @@ def run_call_intelligence_pipeline():
     supervisor = MultiAgentSupervisor()
 
     for sc in CALL_SCENARIOS:
-        if sc["audio_path"].exists():
+        audio_path = Path(str(sc["audio_path"]))
+        if audio_path.exists():
             process_single_call(sc, transcriber, meld, churn_pred, supervisor)
         else:
-            print(f"[!] Audio file missing: {sc['audio_path']}")
+            print(f"[!] Audio file missing: {audio_path}")
 
     print("\n" + "=" * 70)
     print("[OK] All call scenario reports successfully generated in reports/")
