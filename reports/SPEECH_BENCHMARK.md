@@ -11,15 +11,15 @@ Diarizer: `AcousticDiarizer (34-dim acoustic vector: F0 pitch, 13 MFCC means & s
 | Metric | Measured Value | Industry Target | Status |
 | :--- | :--- | :--- | :--- |
 | **Mean Word Error Rate (WER)** | **1.03%** | < 15.0% | **PASSED (Multi-Scenario Tested)** |
-| **Mean Diarization Error Rate (DER)** | **0.00%** | < 25.0% | **PASSED (Collar $\pm 0.25$s)** |
+| **Diarization Error Rate (DER)** | **Not measured** | Requires time-aligned references | **Not reported** |
 | **Speaker Count Discovery ($k^*$)** | **50.0%** | > 85.0% | **Below target** |
 | **Real-Time Factor (RTF)** | **0.09x** | < 1.0x (faster than real-time) | **PASSED (High Throughput)** |
 | **Peak Memory Footprint** | **56.44 MB** | < 1,024 MB | **PASSED (Edge/CPU Deployable)** |
 
 > [!NOTE]
 > **Controlled Benchmark Fixture vs In-the-Wild Telephony**:
-> On clean multi-speaker synthetic test fixtures with distinct speaker timbres, acoustic clustering achieves $< 1.0\%$ WER and low DER. Under additive background noise ($+15$dB SNR) and fast technical speech exchanges, error rates rise realistically to reflect acoustic degradation.
-> In unconstrained, low-bitrate real-world telephony (e.g. 8kHz G.711 PSTN with overlapping speech and packet jitter), lightweight acoustic clustering DER typically ranges between $8\%$ and $20\%$. The `AcousticDiarizer` serves as an efficient edge CPU feature-clustering solution, with downstream Evidence Ledger validation gates enforcing verification before production escalation.
+> Controlled fixtures are not evidence of real-world telephony performance. DER is not measured because reference turns have no timestamps; the previous 0.00% DER claim was unsupported.
+> A text-overlap speaker-attribution diagnostic is not a substitute for DER and must not be compared with published DER targets.
 
 ---
 
