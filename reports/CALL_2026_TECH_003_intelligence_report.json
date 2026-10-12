@@ -1,0 +1,208 @@
+{
+  "call_id": "CALL_2026_TECH_003",
+  "summary": "Conversation of 10 turns centered around 'david, severity, escalated'. Caller initiated dialogue with: \"customer request...\". Interaction concluded with: \"Thank you, we will monitor the emergency slack channel for their immediate respo...\".",
+  "overall_sentiment": "mixed",
+  "sentiment_score": -0.2,
+  "churn_risk_level": "ELEVATED",
+  "churn_risk_score": 0.5644,
+  "primary_intent": "general_inquiry",
+  "unresolved_issues": [],
+  "buying_signals": [],
+  "objections": [],
+  "evidence_ledger": [
+    {
+      "turn_id": 0,
+      "speaker": "Agent",
+      "start_time": "00:00:00.000",
+      "end_time": "00:00:03.841",
+      "start_seconds": 0.0,
+      "end_seconds": 3.841,
+      "verbatim_quote": "Apex cloud technical support line, my name is David.",
+      "supporting_signals": {
+        "emotion": "neutral",
+        "sentiment": "neutral"
+      }
+    },
+    {
+      "turn_id": 1,
+      "speaker": "Agent",
+      "start_time": "00:00:03.841",
+      "end_time": "00:00:06.647",
+      "start_seconds": 3.841,
+      "end_seconds": 6.647,
+      "verbatim_quote": "What issue are you experiencing today?",
+      "supporting_signals": {
+        "emotion": "surprise",
+        "sentiment": "negative"
+      }
+    },
+    {
+      "turn_id": 2,
+      "speaker": "Agent",
+      "start_time": "00:00:06.647",
+      "end_time": "00:00:14.772",
+      "start_seconds": 6.647,
+      "end_seconds": 14.772,
+      "verbatim_quote": "David, our production database synchronization stopped working two hours ago and our transactions are failing.",
+      "supporting_signals": {
+        "emotion": "surprise",
+        "sentiment": "positive"
+      }
+    },
+    {
+      "turn_id": 3,
+      "speaker": "Agent",
+      "start_time": "00:00:14.772",
+      "end_time": "00:00:16.176",
+      "start_seconds": 14.772,
+      "end_seconds": 16.176,
+      "verbatim_quote": "I see the severity.",
+      "supporting_signals": {
+        "emotion": "neutral",
+        "sentiment": "neutral"
+      }
+    },
+    {
+      "turn_id": 4,
+      "speaker": "Agent",
+      "start_time": "00:00:16.176",
+      "end_time": "00:00:22.232",
+      "start_seconds": 16.176,
+      "end_seconds": 22.232,
+      "verbatim_quote": "Let me pull up your account telemetry and run a note health diagnosis immediately.",
+      "supporting_signals": {
+        "emotion": "neutral",
+        "sentiment": "neutral"
+      }
+    },
+    {
+      "turn_id": 5,
+      "speaker": "Agent",
+      "start_time": "00:00:22.232",
+      "end_time": "00:00:25.851",
+      "start_seconds": 22.232,
+      "end_seconds": 25.851,
+      "verbatim_quote": "We are losing revenue every minute this persists.",
+      "supporting_signals": {
+        "emotion": "anger",
+        "sentiment": "neutral"
+      }
+    },
+    {
+      "turn_id": 6,
+      "speaker": "Agent",
+      "start_time": "00:00:25.851",
+      "end_time": "00:00:29.988",
+      "start_seconds": 25.851,
+      "end_seconds": 29.988,
+      "verbatim_quote": "We need this escalated to tier 3 engineering right away.",
+      "supporting_signals": {
+        "emotion": "anger",
+        "sentiment": "neutral"
+      }
+    },
+    {
+      "turn_id": 7,
+      "speaker": "Agent",
+      "start_time": "00:00:29.988",
+      "end_time": "00:00:30.800",
+      "start_seconds": 29.988,
+      "end_seconds": 30.8,
+      "verbatim_quote": "Understood.",
+      "supporting_signals": {
+        "emotion": "neutral",
+        "sentiment": "negative"
+      }
+    },
+    {
+      "turn_id": 8,
+      "speaker": "Agent",
+      "start_time": "00:00:30.800",
+      "end_time": "00:00:36.572",
+      "start_seconds": 30.8,
+      "end_seconds": 36.572,
+      "verbatim_quote": "I have escalated this as a severity one emergency to our senior site reliability engineers.",
+      "supporting_signals": {
+        "emotion": "neutral",
+        "sentiment": "negative"
+      }
+    },
+    {
+      "turn_id": 9,
+      "speaker": "Agent",
+      "start_time": "00:00:36.572",
+      "end_time": "00:00:41.900",
+      "start_seconds": 36.572,
+      "end_seconds": 41.9,
+      "verbatim_quote": "Thank you, we will monitor the emergency slack channel for their immediate response.",
+      "supporting_signals": {
+        "emotion": "neutral",
+        "sentiment": "neutral"
+      }
+    }
+  ],
+  "recommendations": [
+    {
+      "action_code": "ACT_RETENTION_LOCK_DISCOUNT",
+      "title": "Lock Loyalty Retention Offer & Dispatch Confirmation",
+      "description": "Customer communicated cancellation intent based on david, severity. Agent proposed a retention resolution. Send written confirmation and schedule 30-day account check-in.",
+      "priority": "P1_URGENT",
+      "owner_role": "Customer Success / Retention Manager",
+      "requires_human_approval": true,
+      "evidence": []
+    },
+    {
+      "action_code": "ACT_COACHING_DISCLOSURE",
+      "title": "Agent Compliance Coaching Required",
+      "description": "Agent missed mandatory checkpoints: polite_greeting, empathy_demonstrated, clear_resolution_offered. Schedule 1-on-1 supervisor review.",
+      "priority": "P3_MEDIUM",
+      "owner_role": "Call Center Supervisor",
+      "requires_human_approval": false,
+      "evidence": []
+    }
+  ],
+  "metadata": {
+    "qa_score": 40.0,
+    "qa_status": "NEEDS_COACHING",
+    "de_escalated": false,
+    "shap_drivers": [
+      {
+        "feature": "Age",
+        "impact": 1.2664,
+        "value": 45.0,
+        "direction": "increases_risk"
+      },
+      {
+        "feature": "IsActiveMember",
+        "impact": -0.5751,
+        "value": 1.0,
+        "direction": "reduces_risk"
+      },
+      {
+        "feature": "NumOfProducts",
+        "impact": 0.5584,
+        "value": 1.0,
+        "direction": "increases_risk"
+      },
+      {
+        "feature": "Geography_Berlin-Germany",
+        "impact": -0.2591,
+        "value": 0.0,
+        "direction": "reduces_risk"
+      },
+      {
+        "feature": "Gender_Male",
+        "impact": -0.1411,
+        "value": 1.0,
+        "direction": "reduces_risk"
+      }
+    ],
+    "prominent_topics": [
+      "david",
+      "severity",
+      "escalated",
+      "emergency",
+      "apex"
+    ]
+  }
+}

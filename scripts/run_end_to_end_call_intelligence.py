@@ -16,34 +16,78 @@ from src.callintel.ml.meld_classifier import MeldClassifier
 from src.callintel.ml.churn_model import ChurnRiskPredictor
 from src.callintel.agents.multi_agents import MultiAgentSupervisor
 
-AUDIO_PATH = Path("data/samples/sample_customer_call.wav")
 REPORTS_DIR = Path("reports")
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
+CALL_SCENARIOS = [
+    {
+        "call_id": "CALL_2026_APEX_001",
+        "audio_path": Path("data/samples/sample_customer_call.wav"),
+        "customer_profile": {
+            "CreditScore": 640.0,
+            "Age": 49.0,
+            "Tenure": 2.0,
+            "Balance": 88000.0,
+            "NumOfProducts": 1.0,
+            "HasCrCard": 1.0,
+            "IsActiveMember": 0.0,
+            "EstimatedSalary": 92000.0,
+            "Rating": -2,
+            "Geography": "Berlin-Germany",
+            "Gender": "Female",
+        },
+        "pricing_objection": True,
+        "cancellation_warning": True,
+    },
+    {
+        "call_id": "CALL_2026_SALES_002",
+        "audio_path": Path("data/samples/sample_sales_expansion.wav"),
+        "customer_profile": {
+            "CreditScore": 760.0,
+            "Age": 38.0,
+            "Tenure": 4.0,
+            "Balance": 210000.0,
+            "NumOfProducts": 2.0,
+            "HasCrCard": 1.0,
+            "IsActiveMember": 1.0,
+            "EstimatedSalary": 185000.0,
+            "Rating": 2,
+            "Geography": "Paris-France",
+            "Gender": "Female",
+        },
+        "pricing_objection": False,
+        "cancellation_warning": False,
+    },
+    {
+        "call_id": "CALL_2026_TECH_003",
+        "audio_path": Path("data/samples/sample_technical_escalation.wav"),
+        "customer_profile": {
+            "CreditScore": 680.0,
+            "Age": 45.0,
+            "Tenure": 1.5,
+            "Balance": 115000.0,
+            "NumOfProducts": 1.0,
+            "HasCrCard": 1.0,
+            "IsActiveMember": 1.0,
+            "EstimatedSalary": 140000.0,
+            "Rating": -1,
+            "Geography": "Madrid-Spain",
+            "Gender": "Male",
+        },
+        "pricing_objection": False,
+        "cancellation_warning": False,
+    },
+]
 
-def run_call_intelligence_pipeline():
-    print("=" * 70)
-    print("AI CALL INTELLIGENCE ENGINE: END-TO-END PIPELINE EXECUTION")
-    print("=" * 70)
 
-    # 1. SPEECH-TO-TEXT PIPELINE
-    print("\n[Step 1/5] Transcribing Audio with faster-whisper...")
-    transcriber = WhisperTranscriber(model_size="base")
-    asr_result = transcriber.transcribe_file(AUDIO_PATH)
-    print(f"[+] Audio Duration: {asr_result['duration_seconds']}s")
-    print(f"[+] Total Turns Extracted: {asr_result['total_turns']}")
+def process_single_call(scenario: dict, transcriber, meld, churn_pred, supervisor):
+    call_id = scenario["call_id"]
+    audio_path = scenario["audio_path"]
 
-    # 2. MELD EMOTION & SENTIMENT INTELLIGENCE
-    print("\n[Step 2/5] Running MELD Conversational Emotion & Sentiment Engine...")
-    meld = MeldClassifier()
+    print(f"\n---> Processing: {call_id} ({audio_path.name})")
+    asr_result = transcriber.transcribe_file(audio_path)
     turn_emotions = meld.analyze_call_timeline(asr_result["turns"])
-    print(f"[+] Analyzed emotion trajectory across {len(turn_emotions)} turns.")
 
-    # 3. PREDICTIVE CHURN MODEL & SHAP EXPLAINABILITY
-    print("\n[Step 3/5] Computing Churn Risk with XGBoost & SHAP Explainability...")
-    churn_pred = ChurnRiskPredictor()
-    
-    # Calculate aggregate conversation signals
     anger_peak = max(
         (t["emotion"]["probabilities"]["anger"] for t in turn_emotions), default=0.0
     )
@@ -51,36 +95,15 @@ def run_call_intelligence_pipeline():
         1 for t in turn_emotions if t["sentiment"]["label"] == "negative"
     ) / max(1, len(turn_emotions))
 
-    customer_profile = {
-        "CreditScore": 640.0,
-        "Age": 49.0,
-        "Tenure": 2.0,
-        "Balance": 88000.0,
-        "NumOfProducts": 1.0,
-        "HasCrCard": 1.0,
-        "IsActiveMember": 0.0,
-        "EstimatedSalary": 92000.0,
-        "Rating": -2,
-        "Geography": "Berlin-Germany",
-        "Gender": "Female",
-    }
     call_signals = {
         "customer_frustration_score": anger_peak,
         "negative_sentiment_ratio": neg_ratio,
-        "has_pricing_objection": True,
-        "has_cancellation_warning": True,
-        "unresolved_issues_count": 0,
+        "has_pricing_objection": scenario.get("pricing_objection", False),
+        "has_cancellation_warning": scenario.get("cancellation_warning", False),
+        "unresolved_issues_count": 1 if "TECH" in call_id else 0,
     }
-    churn_result = churn_pred.predict_churn(customer_profile, call_signals)
-    print(f"[+] Baseline Churn Risk: {churn_result['baseline_probability']:.1%}")
-    print(f"[+] Call Escalation Multiplier: {churn_result['call_multiplier']}x")
-    print(f"[+] Final Churn Probability: {churn_result['final_churn_probability']:.1%} ({churn_result['risk_tier']})")
+    churn_result = churn_pred.predict_churn(scenario["customer_profile"], call_signals)
 
-    # 4. MULTI-AGENT ORCHESTRATION & EVIDENCE LEDGER
-    print("\n[Step 4/5] Orchestrating 6 Specialized AI Agents...")
-    supervisor = MultiAgentSupervisor()
-    call_id = "CALL_2026_APEX_001"
-    
     insight_report = supervisor.process_call(
         call_id=call_id,
         turns=asr_result["turns"],
@@ -88,38 +111,34 @@ def run_call_intelligence_pipeline():
         churn_prediction=churn_result,
     )
 
-    # 5. GENERATE FINAL REPORT
-    print("\n[Step 5/5] Compiling Auditable Executive Report & Evidence Ledger...")
     report_dict = insight_report.model_dump()
     out_file = REPORTS_DIR / f"{call_id}_intelligence_report.json"
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(report_dict, f, indent=2)
 
-    print(f"\n[OK] Intelligence Report successfully generated and saved to: {out_file}")
-    print("\n" + "=" * 70)
-    print("EXECUTIVE CALL REPORT SUMMARY")
+    print(f"    [OK] Saved report to: {out_file}")
+    print(f"    Sentiment: {insight_report.overall_sentiment.upper()} | Churn: {insight_report.churn_risk_score:.1%} | Intent: {insight_report.primary_intent.upper()}")
+    return insight_report
+
+
+def run_call_intelligence_pipeline():
     print("=" * 70)
-    print(f"Call ID:           {insight_report.call_id}")
-    print(f"Overall Sentiment: {insight_report.overall_sentiment.upper()} (Score: {insight_report.sentiment_score})")
-    print(f"Churn Risk:        {insight_report.churn_risk_level.value} ({insight_report.churn_risk_score:.1%})")
-    print(f"Primary Intent:    {insight_report.primary_intent.upper()}")
-    print(f"QA Score:          {insight_report.metadata['qa_score']}% ({insight_report.metadata['qa_status']})")
-    print(f"Evidence Items:    {len(insight_report.evidence_ledger)} verified quotes in ledger")
-    print(f"Recommendations:   {len(insight_report.recommendations)} evidence-grounded action items")
+    print("AI CALL INTELLIGENCE ENGINE: BATCH CALL PROCESSING")
+    print("=" * 70)
 
-    print("\nEVIDENCE LEDGER (Auditable Excerpts):")
-    for item in insight_report.evidence_ledger:
-        signals = ", ".join(f"{k}={v}" for k, v in item.supporting_signals.items() if v)
-        print(f"  [{item.start_time} -> {item.end_time}] ({item.speaker}): \"{item.verbatim_quote}\"")
-        print(f"    --> Signals: {signals}")
+    transcriber = WhisperTranscriber(model_size="base")
+    meld = MeldClassifier()
+    churn_pred = ChurnRiskPredictor()
+    supervisor = MultiAgentSupervisor()
 
-    print("\nACTION RECOMMENDATIONS:")
-    for rec in insight_report.recommendations:
-        print(f"  [{rec.priority.value}] {rec.title} (Owner: {rec.owner_role})")
-        print(f"    Action Code: {rec.action_code}")
-        print(f"    Description: {rec.description}")
-        if rec.evidence:
-            print(f"    Verified Evidence: \"{rec.evidence[0].verbatim_quote}\" [{rec.evidence[0].start_time}]")
+    for sc in CALL_SCENARIOS:
+        if sc["audio_path"].exists():
+            process_single_call(sc, transcriber, meld, churn_pred, supervisor)
+        else:
+            print(f"[!] Audio file missing: {sc['audio_path']}")
+
+    print("\n" + "=" * 70)
+    print("[OK] All call scenario reports successfully generated in reports/")
     print("=" * 70)
 
 

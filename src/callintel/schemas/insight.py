@@ -9,7 +9,9 @@ from pydantic import BaseModel, Field
 
 class SeverityLevel(str, Enum):
     LOW = "LOW"
+    MODERATE = "MODERATE"
     MEDIUM = "MEDIUM"
+    ELEVATED = "ELEVATED"
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"
 

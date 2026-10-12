@@ -1,0 +1,256 @@
+{
+  "call_id": "CALL_2026_SALES_002",
+  "summary": "Conversation of 12 turns centered around 'enterprise, sarah, team'. Caller initiated dialogue with: \"customer request...\". Interaction concluded with: \"Please email me the contract proposal....\".",
+  "overall_sentiment": "mixed",
+  "sentiment_score": 0.0,
+  "churn_risk_level": "LOW",
+  "churn_risk_score": 0.1853,
+  "primary_intent": "pricing_objection",
+  "unresolved_issues": [
+    "Pricing terms pending confirmation"
+  ],
+  "buying_signals": [
+    "We are very interested in upgrading our plan."
+  ],
+  "objections": [
+    "That fits our budget and security requirements perfectly."
+  ],
+  "evidence_ledger": [
+    {
+      "turn_id": 0,
+      "speaker": "Agent",
+      "start_time": "00:00:00.000",
+      "end_time": "00:00:03.223",
+      "start_seconds": 0.0,
+      "end_seconds": 3.223,
+      "verbatim_quote": "Hello, welcome to APEX Cloud Sales.",
+      "supporting_signals": {
+        "emotion": "neutral",
+        "sentiment": "neutral"
+      }
+    },
+    {
+      "turn_id": 1,
+      "speaker": "Agent",
+      "start_time": "00:00:03.223",
+      "end_time": "00:00:05.341",
+      "start_seconds": 3.223,
+      "end_seconds": 5.341,
+      "verbatim_quote": "This is Sarah speaking.",
+      "supporting_signals": {
+        "emotion": "neutral",
+        "sentiment": "neutral"
+      }
+    },
+    {
+      "turn_id": 2,
+      "speaker": "Agent",
+      "start_time": "00:00:05.341",
+      "end_time": "00:00:08.380",
+      "start_seconds": 5.341,
+      "end_seconds": 8.38,
+      "verbatim_quote": "How can I assist your team today?",
+      "supporting_signals": {
+        "emotion": "anger",
+        "sentiment": "negative"
+      }
+    },
+    {
+      "turn_id": 3,
+      "speaker": "Agent",
+      "start_time": "00:00:08.380",
+      "end_time": "00:00:15.813",
+      "start_seconds": 8.38,
+      "end_seconds": 15.813,
+      "verbatim_quote": "Hi Sarah, our engineering team loves the platform and we are expanding to 50 developers next month.",
+      "supporting_signals": {
+        "emotion": "joy",
+        "sentiment": "positive"
+      }
+    },
+    {
+      "turn_id": 4,
+      "speaker": "Agent",
+      "start_time": "00:00:15.813",
+      "end_time": "00:00:17.540",
+      "start_seconds": 15.813,
+      "end_seconds": 17.54,
+      "verbatim_quote": "That is fantastic news.",
+      "supporting_signals": {
+        "emotion": "joy",
+        "sentiment": "negative"
+      }
+    },
+    {
+      "turn_id": 5,
+      "speaker": "Agent",
+      "start_time": "00:00:17.540",
+      "end_time": "00:00:22.640",
+      "start_seconds": 17.54,
+      "end_seconds": 22.64,
+      "verbatim_quote": "We have dedicated enterprise tiers with higher throughput and custom SLAs.",
+      "supporting_signals": {
+        "emotion": "neutral",
+        "sentiment": "negative"
+      }
+    },
+    {
+      "turn_id": 6,
+      "speaker": "Agent",
+      "start_time": "00:00:22.640",
+      "end_time": "00:00:26.348",
+      "start_seconds": 22.64,
+      "end_seconds": 26.348,
+      "verbatim_quote": "We are very interested in upgrading our plan.",
+      "supporting_signals": {
+        "emotion": "neutral",
+        "sentiment": "neutral"
+      }
+    },
+    {
+      "turn_id": 7,
+      "speaker": "Agent",
+      "start_time": "00:00:26.348",
+      "end_time": "00:00:32.611",
+      "start_seconds": 26.348,
+      "end_seconds": 32.611,
+      "verbatim_quote": "Does the enterprise tier include priority phone support and SOC2 compliance?",
+      "supporting_signals": {
+        "emotion": "anger",
+        "sentiment": "neutral"
+      }
+    },
+    {
+      "turn_id": 8,
+      "speaker": "Agent",
+      "start_time": "00:00:32.611",
+      "end_time": "00:00:33.930",
+      "start_seconds": 32.611,
+      "end_seconds": 33.93,
+      "verbatim_quote": "Yes, absolutely.",
+      "supporting_signals": {
+        "emotion": "joy",
+        "sentiment": "positive"
+      }
+    },
+    {
+      "turn_id": 9,
+      "speaker": "Agent",
+      "start_time": "00:00:33.930",
+      "end_time": "00:00:42.253",
+      "start_seconds": 33.93,
+      "end_seconds": 42.253,
+      "verbatim_quote": "Enterprise includes full compliance guarantees, designated technical account managers, and 24-7 priority support.",
+      "supporting_signals": {
+        "emotion": "joy",
+        "sentiment": "positive"
+      }
+    },
+    {
+      "turn_id": 10,
+      "speaker": "Agent",
+      "start_time": "00:00:42.253",
+      "end_time": "00:00:46.451",
+      "start_seconds": 42.253,
+      "end_seconds": 46.451,
+      "verbatim_quote": "That fits our budget and security requirements perfectly.",
+      "supporting_signals": {
+        "is_pricing_objection": true,
+        "emotion": "joy",
+        "sentiment": "positive"
+      }
+    },
+    {
+      "turn_id": 11,
+      "speaker": "Agent",
+      "start_time": "00:00:46.451",
+      "end_time": "00:00:49.250",
+      "start_seconds": 46.451,
+      "end_seconds": 49.25,
+      "verbatim_quote": "Please email me the contract proposal.",
+      "supporting_signals": {
+        "emotion": "anger",
+        "sentiment": "negative"
+      }
+    }
+  ],
+  "recommendations": [
+    {
+      "action_code": "ACT_SALES_ANNUAL_REVIEW",
+      "title": "Evaluate Annual Plan Rate Lock",
+      "description": "Caller is sensitive to fee increases. Offer multi-month or annual commitment to lock current tier.",
+      "priority": "P2_HIGH",
+      "owner_role": "Account Executive",
+      "requires_human_approval": false,
+      "evidence": [
+        {
+          "turn_id": 10,
+          "speaker": "Agent",
+          "start_time": "00:00:42.253",
+          "end_time": "00:00:46.451",
+          "start_seconds": 42.253,
+          "end_seconds": 46.451,
+          "verbatim_quote": "That fits our budget and security requirements perfectly.",
+          "supporting_signals": {
+            "is_pricing_objection": true,
+            "emotion": "joy",
+            "sentiment": "positive"
+          }
+        }
+      ]
+    },
+    {
+      "action_code": "ACT_COACHING_DISCLOSURE",
+      "title": "Agent Compliance Coaching Required",
+      "description": "Agent missed mandatory checkpoints: empathy_demonstrated, clear_resolution_offered, customer_confirmation. Schedule 1-on-1 supervisor review.",
+      "priority": "P3_MEDIUM",
+      "owner_role": "Call Center Supervisor",
+      "requires_human_approval": false,
+      "evidence": []
+    }
+  ],
+  "metadata": {
+    "qa_score": 40.0,
+    "qa_status": "NEEDS_COACHING",
+    "de_escalated": false,
+    "shap_drivers": [
+      {
+        "feature": "NumOfProducts",
+        "impact": -0.7209,
+        "value": 2.0,
+        "direction": "reduces_risk"
+      },
+      {
+        "feature": "IsActiveMember",
+        "impact": -0.5669,
+        "value": 1.0,
+        "direction": "reduces_risk"
+      },
+      {
+        "feature": "Balance",
+        "impact": 0.375,
+        "value": 210000.0,
+        "direction": "increases_risk"
+      },
+      {
+        "feature": "Gender_Female",
+        "impact": 0.1819,
+        "value": 1.0,
+        "direction": "increases_risk"
+      },
+      {
+        "feature": "Age",
+        "impact": -0.1584,
+        "value": 38.0,
+        "direction": "reduces_risk"
+      }
+    ],
+    "prominent_topics": [
+      "enterprise",
+      "sarah",
+      "team",
+      "priority",
+      "support"
+    ]
+  }
+}
