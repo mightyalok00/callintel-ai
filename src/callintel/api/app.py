@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.callintel.api.routes_calls import router as calls_router
 from src.callintel.api.routes_analytics import router as analytics_router
 from src.callintel.api.websocket_live import router as websocket_router
+from src.callintel.core.config import settings
 
 app = FastAPI(
     title="AI Call Intelligence Engine API",
@@ -17,13 +18,15 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Enable CORS for frontend and dashboard integrations
+# Configure CORS centrally. For production, set explicit trusted frontend origins
+# in Settings; wildcard origins must never be combined with credentialed requests.
+_allow_wildcard_origins = "*" in settings.cors_origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.cors_origins,
+    allow_credentials=not _allow_wildcard_origins,
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
 )
 
 # Register Routers
