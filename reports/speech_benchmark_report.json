@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-12 17:19:23",
+  "timestamp": "2026-10-12 18:07:56",
   "whisper_model": "base",
   "acoustic_features": "34-dim (F0 pitch, 13 MFCC means/stds, centroid, rolloff, RMS)",
   "summary": {
-    "mean_wer": 0.005,
-    "mean_der": 0.0,
-    "mean_rtf": 0.107,
-    "mean_peak_memory_mb": 61.92,
-    "total_calls_benchmarked": 2
+    "mean_wer": 0.0103,
+    "mean_der": 0.0287,
+    "mean_rtf": 0.09,
+    "mean_peak_memory_mb": 56.44,
+    "total_calls_benchmarked": 4
   },
   "calls": [
     {
@@ -15,8 +15,8 @@
       "filename": "sample_customer_call.wav",
       "scenario": "Customer Retention (Pricing & Cancellation Threat)",
       "audio_duration_seconds": 45.93,
-      "processing_time_seconds": 6.38,
-      "real_time_factor_rtf": 0.139,
+      "processing_time_seconds": 6.06,
+      "real_time_factor_rtf": 0.132,
       "peak_memory_mb": 66.01,
       "wer": 0.01,
       "wer_breakdown": {
@@ -47,8 +47,8 @@
       "filename": "sample_sales_expansion.wav",
       "scenario": "Sales Expansion (Enterprise Tier & Buying Signals)",
       "audio_duration_seconds": 49.75,
-      "processing_time_seconds": 3.73,
-      "real_time_factor_rtf": 0.075,
+      "processing_time_seconds": 3.7,
+      "real_time_factor_rtf": 0.074,
       "peak_memory_mb": 57.82,
       "wer": 0.0,
       "wer_breakdown": {
@@ -72,6 +72,70 @@
         "collar_seconds": 0.25
       },
       "detected_turns": 13,
+      "reference_turns": 6
+    },
+    {
+      "call_id": "CALL_2026_TECH_003",
+      "filename": "sample_technical_escalation.wav",
+      "scenario": "Technical Outage (Critical Bug & Urgent Escalation)",
+      "audio_duration_seconds": 41.77,
+      "processing_time_seconds": 3.38,
+      "real_time_factor_rtf": 0.081,
+      "peak_memory_mb": 48.55,
+      "wer": 0.0211,
+      "wer_breakdown": {
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 0,
+        "ref_words": 95
+      },
+      "der": 0.1149,
+      "der_details": {
+        "der": 0.1149,
+        "speaker_error_rate": 0.1149,
+        "missed_speech_rate": 0.0,
+        "false_alarm_rate": 0.0,
+        "total_speech_seconds": 37.44,
+        "speaker_error_seconds": 4.3,
+        "mapped_speakers": {
+          "Agent": "Agent",
+          "Customer": "Customer"
+        },
+        "collar_seconds": 0.25
+      },
+      "detected_turns": 8,
+      "reference_turns": 6
+    },
+    {
+      "call_id": "CALL_2026_NOISE_STRESS",
+      "filename": "sample_customer_call_noisy_snr15.wav",
+      "scenario": "Acoustic Noise Stress (+15dB SNR Additive Office Noise)",
+      "audio_duration_seconds": 45.93,
+      "processing_time_seconds": 3.3,
+      "real_time_factor_rtf": 0.072,
+      "peak_memory_mb": 53.39,
+      "wer": 0.01,
+      "wer_breakdown": {
+        "substitutions": 0,
+        "deletions": 1,
+        "insertions": 0,
+        "ref_words": 100
+      },
+      "der": 0.0,
+      "der_details": {
+        "der": 0.0,
+        "speaker_error_rate": 0.0,
+        "missed_speech_rate": 0.0,
+        "false_alarm_rate": 0.0,
+        "total_speech_seconds": 38.88,
+        "speaker_error_seconds": 0.0,
+        "mapped_speakers": {
+          "Customer": "Customer",
+          "Agent": "Agent"
+        },
+        "collar_seconds": 0.25
+      },
+      "detected_turns": 9,
       "reference_turns": 6
     }
   ]

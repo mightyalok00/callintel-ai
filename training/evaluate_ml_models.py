@@ -504,6 +504,20 @@ def generate_markdown_report(churn_eval: Dict[str, Any], meld_eval: Dict[str, An
     print(f"[OK] Generated Markdown Report at {out_path}")
 
 
+def _numpy_json_serializer(obj):
+    if hasattr(obj, "item"):
+        return obj.item()
+    if hasattr(obj, "tolist"):
+        return obj.tolist()
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.floating):
+        return float(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
+
 def run_full_evaluation():
     churn_eval = evaluate_churn_models()
     meld_eval = evaluate_meld_models()
@@ -516,7 +530,7 @@ def run_full_evaluation():
 
     json_path = REPORTS_DIR / "ml_evaluation_benchmark.json"
     with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(full_results, f, indent=2)
+        json.dump(full_results, f, indent=2, default=_numpy_json_serializer)
     print(f"\n[OK] Saved complete evaluation results to {json_path}")
 
     md_path = REPORTS_DIR / "ML_EVALUATION.md"

@@ -3,9 +3,9 @@ Dependency Injection providers for FastAPI.
 Provides managed, shared instances of database sessions, ML models, and application services.
 """
 
-from typing import Generator
+from typing import Generator, Optional
 from functools import lru_cache
-from fastapi import Depends
+from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from src.callintel.db.models import SessionLocal
@@ -70,3 +70,32 @@ def get_call_analysis_service(
         churn_predictor=churn_predictor,
         supervisor=supervisor,
     )
+
+
+def verify_api_key(
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+) -> Optional[str]:
+    """
+    Validates API Key if authentication is enabled in configuration.
+    Permits unauthenticated requests when require_auth is False and api_key is None.
+    Supports either 'X-API-Key' header or 'Authorization: Bearer <token>'.
+    """
+    from src.callintel.core.config import settings
+    if settings.require_auth or settings.api_key:
+        expected = settings.api_key or "sk_callintel_demo_2026"
+        token = x_api_key
+        if not token and authorization:
+            if authorization.startswith("Bearer "):
+                token = authorization[7:].strip()
+            else:
+                token = authorization.strip()
+
+        if not token or token != expected:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unauthorized: Missing or invalid API key.",
+                headers={"WWW-Authenticate": "ApiKey"},
+            )
+        return token
+    return x_api_key

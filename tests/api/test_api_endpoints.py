@@ -63,3 +63,67 @@ def test_websocket_streaming_session():
         assert "emotion" in turn_data
         assert "sentiment" in turn_data
         assert turn_data["in_call_alert"]["flagged"] is True
+
+
+def test_upload_rejects_corrupted_magic_bytes():
+    fake_audio = b"FAKE_CONTENT_NOT_WAVE_HEADER_DATA"
+    response = client.post(
+        "/api/v1/calls/upload",
+        files={"file": ("fake.wav", fake_audio, "audio/wav")},
+    )
+    assert response.status_code == 400
+    assert "Invalid audio content signature" in response.json()["detail"]
+
+
+def test_upload_rejects_oversized_payload(monkeypatch):
+    from src.callintel.core.config import settings
+    # Set limit to 200 bytes for test
+    monkeypatch.setattr(settings, "max_upload_size_bytes", 200)
+
+    # Valid wav header but oversized
+    wav_header = b"RIFF" + (300).to_bytes(4, "little") + b"WAVE" + (b"\x00" * 300)
+    response = client.post(
+        "/api/v1/calls/upload",
+        files={"file": ("oversized.wav", wav_header, "audio/wav")},
+    )
+    assert response.status_code == 413
+    assert "exceeds maximum allowed upload limit" in response.json()["detail"]
+
+
+def test_upload_sanitizes_path_traversal():
+    assert SAMPLE_WAV.exists()
+    with open(SAMPLE_WAV, "rb") as f:
+        response = client.post(
+            "/api/v1/calls/upload",
+            files={"file": ("../../../../etc/malicious_call.wav", f, "audio/wav")},
+        )
+    assert response.status_code == 202
+    filename = response.json()["filename"]
+    assert ".." not in filename
+    assert "/" not in filename
+    assert "\\" not in filename
+    assert "malicious_call.wav" in filename
+
+
+def test_upload_enforces_api_key_when_required(monkeypatch):
+    from src.callintel.core.config import settings
+    monkeypatch.setattr(settings, "require_auth", True)
+    monkeypatch.setattr(settings, "api_key", "secret_test_key_123")
+
+    with open(SAMPLE_WAV, "rb") as f:
+        # Request without key
+        fail_resp = client.post(
+            "/api/v1/calls/upload",
+            files={"file": ("valid.wav", f, "audio/wav")},
+        )
+    assert fail_resp.status_code == 401
+
+    with open(SAMPLE_WAV, "rb") as f:
+        # Request with valid key
+        success_resp = client.post(
+            "/api/v1/calls/upload",
+            files={"file": ("valid.wav", f, "audio/wav")},
+            headers={"X-API-Key": "secret_test_key_123"},
+        )
+    assert success_resp.status_code == 202
+

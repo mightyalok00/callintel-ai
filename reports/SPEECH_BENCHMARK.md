@@ -1,6 +1,6 @@
 # Speech Processing & Diarization Benchmark Report
 
-Generated: 2026-10-12 17:19:23
+Generated: 2026-10-12 18:07:56
 ASR Engine: `faster-whisper (model=base, compute_type=int8/float32)`
 Diarizer: `AcousticDiarizer (34-dim acoustic vector: F0 pitch, 13 MFCC means & stds, spectral centroid, rolloff, RMS)`
 
@@ -10,10 +10,15 @@ Diarizer: `AcousticDiarizer (34-dim acoustic vector: F0 pitch, 13 MFCC means & s
 
 | Metric | Measured Value | Industry Target | Status |
 | :--- | :--- | :--- | :--- |
-| **Mean Word Error Rate (WER)** | **0.50%** | < 15.0% | **PASSED (Production-Grade)** |
-| **Mean Diarization Error Rate (DER)** | **0.00%** | < 25.0% | **PASSED (Auditable Turn Segregation)** |
-| **Real-Time Factor (RTF)** | **0.107x** | < 1.0x (faster than real-time) | **PASSED (High Throughput)** |
-| **Peak Memory Footprint** | **61.92 MB** | < 1,024 MB | **PASSED (Edge/CPU Deployable)** |
+| **Mean Word Error Rate (WER)** | **1.03%** | < 15.0% | **PASSED (Multi-Scenario Tested)** |
+| **Mean Diarization Error Rate (DER)** | **2.87%** | < 25.0% | **PASSED (Collar $\pm 0.25$s)** |
+| **Real-Time Factor (RTF)** | **0.09x** | < 1.0x (faster than real-time) | **PASSED (High Throughput)** |
+| **Peak Memory Footprint** | **56.44 MB** | < 1,024 MB | **PASSED (Edge/CPU Deployable)** |
+
+> [!NOTE]
+> **Controlled Benchmark Fixture vs In-the-Wild Telephony**:
+> On clean multi-speaker synthetic test fixtures with distinct speaker timbres, acoustic clustering achieves $< 1.0\%$ WER and low DER. Under additive background noise ($+15$dB SNR) and fast technical speech exchanges, error rates rise realistically to reflect acoustic degradation.
+> In unconstrained, low-bitrate real-world telephony (e.g. 8kHz G.711 PSTN with overlapping speech and packet jitter), lightweight acoustic clustering DER typically ranges between $8\%$ and $20\%$. The `AcousticDiarizer` serves as an efficient edge CPU feature-clustering solution, with downstream Evidence Ledger validation gates enforcing verification before production escalation.
 
 ---
 
@@ -31,8 +36,10 @@ DER is evaluated using standard NIST RT-09 scoring rules:
 
 | Call ID | Scenario | Duration | Processing Time | RTF | WER | DER | Peak RAM |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `CALL_2026_APEX_001` | Customer Retention (Pricing & Cancellation Threat) | 45.9s | 6.38s | 0.139x | **1.0%** | **0.0%** | 66.01 MB |
-| `CALL_2026_SALES_002` | Sales Expansion (Enterprise Tier & Buying Signals) | 49.8s | 3.73s | 0.075x | **0.0%** | **0.0%** | 57.82 MB |
+| `CALL_2026_APEX_001` | Customer Retention (Pricing & Cancellation Threat) | 45.9s | 6.06s | 0.132x | **1.0%** | **0.0%** | 66.01 MB |
+| `CALL_2026_SALES_002` | Sales Expansion (Enterprise Tier & Buying Signals) | 49.8s | 3.70s | 0.074x | **0.0%** | **0.0%** | 57.82 MB |
+| `CALL_2026_TECH_003` | Technical Outage (Critical Bug & Urgent Escalation) | 41.8s | 3.38s | 0.081x | **2.1%** | **11.5%** | 48.55 MB |
+| `CALL_2026_NOISE_STRESS` | Acoustic Noise Stress (+15dB SNR Additive Office Noise) | 45.9s | 3.30s | 0.072x | **1.0%** | **0.0%** | 53.39 MB |
 
 ---
 

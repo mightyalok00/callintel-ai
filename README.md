@@ -70,7 +70,7 @@ graph TB
 
 ### Primary Dataset: MELD (`data/meld`)
 
-- **Location**: `data/meld` (bundled JSON files, see [DATASETS_AND_MODELS.md](file:///e:/ai/docs/DATASETS_AND_MODELS.md))
+- **Location**: `data/meld` (bundled JSON files, see [DATASETS_AND_MODELS.md](docs/DATASETS_AND_MODELS.md))
 - **Volume**: 13,708 utterances across 1,432 dialogues.
   - **Train**: 9,989 utterances (1,038 dialogues)
   - **Dev**: 1,109 utterances (114 dialogues)
@@ -91,7 +91,7 @@ graph TB
 ## 4. Repository & Directory Structure
 
 ```text
-e:\ai\
+callintel-ai/
 ├── README.md                           # Project documentation & architecture
 ├── requirements.txt                    # Pinned Python dependencies
 ├── pyproject.toml                      # Package build configuration
@@ -175,6 +175,19 @@ e:\ai\
 - **Statistical Separation Guarantee**:
   - The model outputs a statistically verified `baseline_churn_probability` (0.0 to 1.0) derived strictly from the trained XGBoost model and explained via TreeSHAP feature contributions.
   - In-call conversational modifiers (e.g., explicit cancellation threats, extreme frustration peaks) are computed separately and reported under `in_call_operational_modifier` as contact-center operational escalation signals, never misrepresented as learned longitudinal probabilities.
+
+### Speech Processing & Diarization Benchmarks
+
+- **Engine**: `faster-whisper` (`base` model, int8 CPU) + `AcousticDiarizer` (34-dim acoustic vector: F0 pitch, 13 MFCC means & stds, spectral centroid, rolloff, RMS).
+- **Scope**: Multi-scenario evaluation across 4 test calls (retention threat, sales expansion, fast technical escalation, +15dB SNR additive office noise). See full report at [SPEECH_BENCHMARK.md](reports/SPEECH_BENCHMARK.md).
+- **Measured Metrics (Controlled Multi-Scenario Benchmark)**:
+  - **Mean Word Error Rate (WER)**: `1.03%`
+  - **Mean Diarization Error Rate (DER)**: `2.87%` (NIST RT-09 standard with $\pm 0.25$s forgiveness collar)
+  - **Real-Time Factor (RTF)**: `0.090x` (>10x faster than real-time on CPU)
+  - **Peak Memory Footprint**: `56.4 MB`
+- **Controlled Fixture vs Real Telephony Disclaimer**:
+  - These metrics reflect controlled multi-speaker dialogues with distinct speaker timbres. Under additive background noise and fast technical exchanges, DER realistically increases (up to $11.5\%$).
+  - In unconstrained, low-bitrate real-world telephony (e.g. 8kHz G.711 PSTN with overlapping speech and packet jitter), lightweight acoustic clustering DER typically ranges between $8\%$ and $20\%$. The system pairs speech processing with auditable **Evidence Ledger validation gates** rather than relying on ungrounded transcription in high-stakes workflows.
 
 ---
 
