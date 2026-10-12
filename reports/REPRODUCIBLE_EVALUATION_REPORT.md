@@ -125,14 +125,14 @@ The fused model improves on text-only macro-F1 by **0.0247**, but its accuracy (
 
 ## 4. Speech benchmark: per-call results and limitations
 
-| Scenario | WER | DER (reported) | Discovered speakers | Expected speakers | RTF |
+| Scenario | WER | DER | Discovered speakers | Expected speakers | RTF |
 |---|---:|---:|---:|---:|---:|
 | Retention call | 1.0% | 0.0% | 2 | 2 | 0.130 |
 | Sales expansion | 0.0% | 0.0% | 3 | 2 | 0.072 |
 | Technical escalation | 2.11% | 0.0% | 3 | 2 | 0.081 |
 | Additive-noise stress | 1.0% | 0.0% | 2 | 2 | 0.075 |
 
-The perfect reported DER should be interpreted cautiously: two calls produce three speaker clusters when the reference expects two. The reported DER implementation appears to allow optimal mapping without fully reflecting extra discovered clusters in the headline value. Speaker-count accuracy is 2/4 (50%), so the headline DER alone is insufficient. Review the DER implementation and add tests that penalize over-segmentation/extra speakers before using DER as a release gate.
+DER is not measured: the reference turns in this fixture set do not include time boundaries, so the implementation cannot score missed speech, false alarms, or collar-adjusted speaker confusion. The earlier 0.00% DER figure was unsupported and has been withdrawn. Speaker-count accuracy is 2/4 (50%).
 
 The synthetic fixtures also have clean, scripted reference speech and do not cover representative accent, overlap, telephony codec, or noise distributions. A real-call evaluation requires consent, de-identification, independently human-verified transcripts/speaker turns, a held-out split, and results segmented by relevant acoustic conditions.
 
@@ -140,7 +140,7 @@ The synthetic fixtures also have clean, scripted reference speech and do not cov
 
 1. **Fix evaluation accounting:** replace the constant-score dummy PR-AUC interpretation with a prevalence reference and document average-precision vs trapezoidal PR-AUC consistently.
 2. **Strengthen emotion performance:** report per-class confusion changes, tune class weighting only on training/validation data, and evaluate calibration and abstention for low-confidence minority classes.
-3. **Audit diarization scoring:** verify the DER implementation against known over-clustering/under-clustering fixtures and a trusted scorer; publish the scoring code/version and collar.
+3. **Add valid diarization evaluation:** collect time-aligned reference speaker regions and use a trusted DER scorer with a documented collar, then publish reproducible tests.
 4. **Collect representative data:** evaluate only on consented, de-identified calls with independent annotation and a held-out set.
 5. **Make runs fully reproducible:** lock dependencies, hash datasets and fixtures, record hardware/software versions and random seeds, and archive generated JSON/Markdown as CI artifacts.
 
