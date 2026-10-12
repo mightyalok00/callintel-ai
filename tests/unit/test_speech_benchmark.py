@@ -1,6 +1,5 @@
 """
-Unit tests for Speech Benchmark metrics (WER & DER).
-Verifies standard Levenshtein word error rate and NIST collar diarization calculations.
+Unit tests for WER and text-aligned speaker attribution. The proxy is explicitly not DER.
 """
 
 from training.benchmark_speech import compute_wer, compute_der, normalize_words
@@ -26,7 +25,7 @@ def test_wer_substitutions_and_insertions():
     assert details["insertions"] == 1
 
 
-def test_der_perfect_alignment():
+def test_speaker_attribution_proxy_perfect_alignment_is_not_der():
     ref_turns = [
         {"speaker": "Agent", "text": "Hello how can I help you today?"},
         {"speaker": "Customer", "text": "I want to discuss my account billing."},
@@ -47,13 +46,14 @@ def test_der_perfect_alignment():
     ]
 
     metrics = compute_der(ref_turns, hyp_turns, collar_seconds=0.25)
-    assert metrics["der"] == 0.0
-    assert metrics["speaker_error_rate"] == 0.0
+    assert metrics["der"] is None
+    assert metrics["speaker_attribution_error_rate"] == 0.0
+    assert metrics["metric_kind"] == "text_aligned_speaker_attribution_proxy_not_DER"
     assert metrics["mapped_speakers"]["Speaker 0"] == "Agent"
     assert metrics["mapped_speakers"]["Speaker 1"] == "Customer"
 
 
-def test_der_speaker_confusion():
+def test_speaker_attribution_proxy_detects_speaker_confusion():
     ref_turns = [
         {"speaker": "Agent", "text": "Hello how can I help you today?"},
         {"speaker": "Customer", "text": "I want to discuss my account billing."},
@@ -75,4 +75,5 @@ def test_der_speaker_confusion():
     ]
 
     metrics = compute_der(ref_turns, hyp_turns, collar_seconds=0.25)
-    assert metrics["der"] > 0.0
+    assert metrics["der"] is None
+    assert metrics["speaker_attribution_error_rate"] > 0.0
