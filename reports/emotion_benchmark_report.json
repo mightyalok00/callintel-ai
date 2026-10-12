@@ -1,5 +1,5 @@
 {
-  "dataset": "MELD (D:\\MELD-master)",
+  "dataset": "MELD Conversational Dataset (data/meld)",
   "train_samples": 11098,
   "test_samples": 2610,
   "models": {

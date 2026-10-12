@@ -138,21 +138,26 @@ class ChurnRiskPredictor:
         operational_composite_risk = min(0.99, round(base_prob * multiplier, 4))
 
         return {
+            "account_baseline_churn_probability": round(base_prob, 4),
+            "account_risk_tier": base_tier,
             "baseline_probability": round(base_prob, 4),
             "baseline_churn_probability": round(base_prob, 4),
             "baseline_risk_tier": base_tier,
             "statistical_validation": {
                 "algorithm": "XGBoost Classifier + TreeSHAP",
+                "training_domain": "Tabular Banking Account Demographics (Non-Audio)",
+                "dataset": "Bank Customer Churn (165,031 records)",
                 "test_roc_auc": 0.8808,
                 "test_pr_auc": 0.7109,
                 "is_calibrated": True,
+                "disclaimer": "This baseline probability is strictly an account-level propensity model trained on tabular banking profile data, NOT trained on call speech or transcripts.",
             },
             "top_shap_drivers": top_drivers[:5],
             "in_call_operational_modifier": {
                 "multiplier": round(multiplier, 3),
                 "composite_risk_score": operational_composite_risk,
                 "applied_signals": applied_modifiers,
-                "disclaimer": "Operational modifier is a contact-center escalation heuristic; baseline probability is the statistically validated metric.",
+                "disclaimer": "Operational modifier is a contact-center escalation heuristic combining real-time frustration and dialogue objections; it is not a call-trained machine learning model.",
             },
             # For backward compatibility with report schemas
             "final_churn_probability": operational_composite_risk,

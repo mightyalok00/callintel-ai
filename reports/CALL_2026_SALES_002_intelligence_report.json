@@ -1,8 +1,8 @@
 {
   "call_id": "CALL_2026_SALES_002",
-  "summary": "Conversation of 12 turns centered around 'enterprise, sarah, team'. Caller initiated dialogue with: \"customer request...\". Interaction concluded with: \"Please email me the contract proposal....\".",
+  "summary": "Conversation of 13 turns centered around 'enterprise, sarah, team'. Caller initiated dialogue with: \"Hi Sarah, our engineering team loves the platform and we are expanding to 50 dev...\". Interaction concluded with: \"and 24-7 priority support....\".",
   "overall_sentiment": "mixed",
-  "sentiment_score": 0.0,
+  "sentiment_score": 0.385,
   "churn_risk_level": "LOW",
   "churn_risk_score": 0.1853,
   "primary_intent": "pricing_objection",
@@ -20,10 +20,10 @@
       "turn_id": 0,
       "speaker": "Agent",
       "start_time": "00:00:00.000",
-      "end_time": "00:00:03.223",
+      "end_time": "00:00:02.720",
       "start_seconds": 0.0,
-      "end_seconds": 3.223,
-      "verbatim_quote": "Hello, welcome to APEX Cloud Sales.",
+      "end_seconds": 2.72,
+      "verbatim_quote": "Hello, welcome to Apex Cloud Sales.",
       "supporting_signals": {
         "emotion": "neutral",
         "sentiment": "neutral"
@@ -32,10 +32,10 @@
     {
       "turn_id": 1,
       "speaker": "Agent",
-      "start_time": "00:00:03.223",
-      "end_time": "00:00:05.341",
-      "start_seconds": 3.223,
-      "end_seconds": 5.341,
+      "start_time": "00:00:03.520",
+      "end_time": "00:00:04.720",
+      "start_seconds": 3.52,
+      "end_seconds": 4.72,
       "verbatim_quote": "This is Sarah speaking.",
       "supporting_signals": {
         "emotion": "neutral",
@@ -45,10 +45,10 @@
     {
       "turn_id": 2,
       "speaker": "Agent",
-      "start_time": "00:00:05.341",
-      "end_time": "00:00:08.380",
-      "start_seconds": 5.341,
-      "end_seconds": 8.38,
+      "start_time": "00:00:05.520",
+      "end_time": "00:00:07.360",
+      "start_seconds": 5.52,
+      "end_seconds": 7.36,
       "verbatim_quote": "How can I assist your team today?",
       "supporting_signals": {
         "emotion": "anger",
@@ -57,11 +57,11 @@
     },
     {
       "turn_id": 3,
-      "speaker": "Agent",
-      "start_time": "00:00:08.380",
-      "end_time": "00:00:15.813",
-      "start_seconds": 8.38,
-      "end_seconds": 15.813,
+      "speaker": "Customer",
+      "start_time": "00:00:08.240",
+      "end_time": "00:00:14.160",
+      "start_seconds": 8.24,
+      "end_seconds": 14.16,
       "verbatim_quote": "Hi Sarah, our engineering team loves the platform and we are expanding to 50 developers next month.",
       "supporting_signals": {
         "emotion": "joy",
@@ -71,23 +71,23 @@
     {
       "turn_id": 4,
       "speaker": "Agent",
-      "start_time": "00:00:15.813",
-      "end_time": "00:00:17.540",
-      "start_seconds": 15.813,
-      "end_seconds": 17.54,
+      "start_time": "00:00:15.040",
+      "end_time": "00:00:16.560",
+      "start_seconds": 15.04,
+      "end_seconds": 16.56,
       "verbatim_quote": "That is fantastic news.",
       "supporting_signals": {
         "emotion": "joy",
-        "sentiment": "negative"
+        "sentiment": "positive"
       }
     },
     {
       "turn_id": 5,
       "speaker": "Agent",
-      "start_time": "00:00:17.540",
-      "end_time": "00:00:22.640",
-      "start_seconds": 17.54,
-      "end_seconds": 22.64,
+      "start_time": "00:00:17.440",
+      "end_time": "00:00:21.600",
+      "start_seconds": 17.44,
+      "end_seconds": 21.6,
       "verbatim_quote": "We have dedicated enterprise tiers with higher throughput and custom SLAs.",
       "supporting_signals": {
         "emotion": "neutral",
@@ -96,11 +96,11 @@
     },
     {
       "turn_id": 6,
-      "speaker": "Agent",
-      "start_time": "00:00:22.640",
-      "end_time": "00:00:26.348",
-      "start_seconds": 22.64,
-      "end_seconds": 26.348,
+      "speaker": "Customer",
+      "start_time": "00:00:22.480",
+      "end_time": "00:00:24.880",
+      "start_seconds": 22.48,
+      "end_seconds": 24.88,
       "verbatim_quote": "We are very interested in upgrading our plan.",
       "supporting_signals": {
         "emotion": "neutral",
@@ -109,24 +109,24 @@
     },
     {
       "turn_id": 7,
-      "speaker": "Agent",
-      "start_time": "00:00:26.348",
-      "end_time": "00:00:32.611",
-      "start_seconds": 26.348,
-      "end_seconds": 32.611,
-      "verbatim_quote": "Does the enterprise tier include priority phone support and SOC2 compliance?",
+      "speaker": "Customer",
+      "start_time": "00:00:25.760",
+      "end_time": "00:00:30.560",
+      "start_seconds": 25.76,
+      "end_seconds": 30.56,
+      "verbatim_quote": "Does the enterprise tier include priority phone support and SOC two compliance?",
       "supporting_signals": {
-        "emotion": "anger",
+        "emotion": "neutral",
         "sentiment": "neutral"
       }
     },
     {
       "turn_id": 8,
       "speaker": "Agent",
-      "start_time": "00:00:32.611",
-      "end_time": "00:00:33.930",
-      "start_seconds": 32.611,
-      "end_seconds": 33.93,
+      "start_time": "00:00:31.440",
+      "end_time": "00:00:32.960",
+      "start_seconds": 31.44,
+      "end_seconds": 32.96,
       "verbatim_quote": "Yes, absolutely.",
       "supporting_signals": {
         "emotion": "joy",
@@ -136,11 +136,11 @@
     {
       "turn_id": 9,
       "speaker": "Agent",
-      "start_time": "00:00:33.930",
-      "end_time": "00:00:42.253",
-      "start_seconds": 33.93,
-      "end_seconds": 42.253,
-      "verbatim_quote": "Enterprise includes full compliance guarantees, designated technical account managers, and 24-7 priority support.",
+      "start_time": "00:00:33.760",
+      "end_time": "00:00:39.440",
+      "start_seconds": 33.76,
+      "end_seconds": 39.44,
+      "verbatim_quote": "Enterprise includes full compliance guarantees, designated technical account managers,",
       "supporting_signals": {
         "emotion": "joy",
         "sentiment": "positive"
@@ -149,10 +149,23 @@
     {
       "turn_id": 10,
       "speaker": "Agent",
-      "start_time": "00:00:42.253",
-      "end_time": "00:00:46.451",
-      "start_seconds": 42.253,
-      "end_seconds": 46.451,
+      "start_time": "00:00:39.440",
+      "end_time": "00:00:41.760",
+      "start_seconds": 39.44,
+      "end_seconds": 41.76,
+      "verbatim_quote": "and 24-7 priority support.",
+      "supporting_signals": {
+        "emotion": "joy",
+        "sentiment": "positive"
+      }
+    },
+    {
+      "turn_id": 11,
+      "speaker": "Customer",
+      "start_time": "00:00:42.640",
+      "end_time": "00:00:45.760",
+      "start_seconds": 42.64,
+      "end_seconds": 45.76,
       "verbatim_quote": "That fits our budget and security requirements perfectly.",
       "supporting_signals": {
         "is_pricing_objection": true,
@@ -161,16 +174,16 @@
       }
     },
     {
-      "turn_id": 11,
-      "speaker": "Agent",
-      "start_time": "00:00:46.451",
-      "end_time": "00:00:49.250",
-      "start_seconds": 46.451,
-      "end_seconds": 49.25,
+      "turn_id": 12,
+      "speaker": "Customer",
+      "start_time": "00:00:46.640",
+      "end_time": "00:00:49.680",
+      "start_seconds": 46.64,
+      "end_seconds": 49.68,
       "verbatim_quote": "Please email me the contract proposal.",
       "supporting_signals": {
-        "emotion": "anger",
-        "sentiment": "negative"
+        "emotion": "joy",
+        "sentiment": "positive"
       }
     }
   ],
@@ -184,12 +197,12 @@
       "requires_human_approval": false,
       "evidence": [
         {
-          "turn_id": 10,
-          "speaker": "Agent",
-          "start_time": "00:00:42.253",
-          "end_time": "00:00:46.451",
-          "start_seconds": 42.253,
-          "end_seconds": 46.451,
+          "turn_id": 11,
+          "speaker": "Customer",
+          "start_time": "00:00:42.640",
+          "end_time": "00:00:45.760",
+          "start_seconds": 42.64,
+          "end_seconds": 45.76,
           "verbatim_quote": "That fits our budget and security requirements perfectly.",
           "supporting_signals": {
             "is_pricing_objection": true,
@@ -212,7 +225,7 @@
   "metadata": {
     "qa_score": 40.0,
     "qa_status": "NEEDS_COACHING",
-    "de_escalated": false,
+    "de_escalated": true,
     "shap_drivers": [
       {
         "feature": "NumOfProducts",

@@ -1,8 +1,8 @@
 {
   "call_id": "CALL_2026_TECH_003",
-  "summary": "Conversation of 10 turns centered around 'david, severity, escalated'. Caller initiated dialogue with: \"customer request...\". Interaction concluded with: \"Thank you, we will monitor the emergency slack channel for their immediate respo...\".",
+  "summary": "Conversation of 8 turns centered around 'david, severity, escalated'. Caller initiated dialogue with: \"David, our production database synchronization stopped working two hours ago and...\". Interaction concluded with: \"Understood. I have escalated this as a severity one emergency to our senior site...\".",
   "overall_sentiment": "mixed",
-  "sentiment_score": -0.2,
+  "sentiment_score": 0.0,
   "churn_risk_level": "ELEVATED",
   "churn_risk_score": 0.5644,
   "primary_intent": "general_inquiry",
@@ -14,10 +14,10 @@
       "turn_id": 0,
       "speaker": "Agent",
       "start_time": "00:00:00.000",
-      "end_time": "00:00:03.841",
+      "end_time": "00:00:03.600",
       "start_seconds": 0.0,
-      "end_seconds": 3.841,
-      "verbatim_quote": "Apex cloud technical support line, my name is David.",
+      "end_seconds": 3.6,
+      "verbatim_quote": "Apex Cloud Technical Support Line. My name is David.",
       "supporting_signals": {
         "emotion": "neutral",
         "sentiment": "neutral"
@@ -26,10 +26,10 @@
     {
       "turn_id": 1,
       "speaker": "Agent",
-      "start_time": "00:00:03.841",
-      "end_time": "00:00:06.647",
-      "start_seconds": 3.841,
-      "end_seconds": 6.647,
+      "start_time": "00:00:04.400",
+      "end_time": "00:00:06.480",
+      "start_seconds": 4.4,
+      "end_seconds": 6.48,
       "verbatim_quote": "What issue are you experiencing today?",
       "supporting_signals": {
         "emotion": "surprise",
@@ -38,12 +38,12 @@
     },
     {
       "turn_id": 2,
-      "speaker": "Agent",
-      "start_time": "00:00:06.647",
-      "end_time": "00:00:14.772",
-      "start_seconds": 6.647,
-      "end_seconds": 14.772,
-      "verbatim_quote": "David, our production database synchronization stopped working two hours ago and our transactions are failing.",
+      "speaker": "Customer",
+      "start_time": "00:00:07.360",
+      "end_time": "00:00:12.800",
+      "start_seconds": 7.36,
+      "end_seconds": 12.8,
+      "verbatim_quote": "David, our production database synchronization stopped working two hours ago and our transactions",
       "supporting_signals": {
         "emotion": "surprise",
         "sentiment": "positive"
@@ -52,50 +52,50 @@
     {
       "turn_id": 3,
       "speaker": "Agent",
-      "start_time": "00:00:14.772",
-      "end_time": "00:00:16.176",
-      "start_seconds": 14.772,
-      "end_seconds": 16.176,
-      "verbatim_quote": "I see the severity.",
+      "start_time": "00:00:12.800",
+      "end_time": "00:00:19.200",
+      "start_seconds": 12.8,
+      "end_seconds": 19.2,
+      "verbatim_quote": "are failing. I see the severity. Let me pull up your account telemetry and run a note health",
       "supporting_signals": {
-        "emotion": "neutral",
+        "emotion": "joy",
         "sentiment": "neutral"
       }
     },
     {
       "turn_id": 4,
       "speaker": "Agent",
-      "start_time": "00:00:16.176",
-      "end_time": "00:00:22.232",
-      "start_seconds": 16.176,
-      "end_seconds": 22.232,
-      "verbatim_quote": "Let me pull up your account telemetry and run a note health diagnosis immediately.",
-      "supporting_signals": {
-        "emotion": "neutral",
-        "sentiment": "neutral"
-      }
-    },
-    {
-      "turn_id": 5,
-      "speaker": "Agent",
-      "start_time": "00:00:22.232",
-      "end_time": "00:00:25.851",
-      "start_seconds": 22.232,
-      "end_seconds": 25.851,
-      "verbatim_quote": "We are losing revenue every minute this persists.",
+      "start_time": "00:00:19.200",
+      "end_time": "00:00:24.000",
+      "start_seconds": 19.2,
+      "end_seconds": 24.0,
+      "verbatim_quote": "diagnosis immediately. We are losing revenue every minute this persists.",
       "supporting_signals": {
         "emotion": "anger",
         "sentiment": "neutral"
       }
     },
     {
+      "turn_id": 5,
+      "speaker": "Customer",
+      "start_time": "00:00:24.880",
+      "end_time": "00:00:27.840",
+      "start_seconds": 24.88,
+      "end_seconds": 27.84,
+      "verbatim_quote": "We need this escalated to tier 3 engineering right away.",
+      "supporting_signals": {
+        "emotion": "neutral",
+        "sentiment": "neutral"
+      }
+    },
+    {
       "turn_id": 6,
       "speaker": "Agent",
-      "start_time": "00:00:25.851",
-      "end_time": "00:00:29.988",
-      "start_seconds": 25.851,
-      "end_seconds": 29.988,
-      "verbatim_quote": "We need this escalated to tier 3 engineering right away.",
+      "start_time": "00:00:28.640",
+      "end_time": "00:00:34.800",
+      "start_seconds": 28.64,
+      "end_seconds": 34.8,
+      "verbatim_quote": "Understood. I have escalated this as a severity one emergency to our senior site reliability",
       "supporting_signals": {
         "emotion": "anger",
         "sentiment": "neutral"
@@ -103,40 +103,14 @@
     },
     {
       "turn_id": 7,
-      "speaker": "Agent",
-      "start_time": "00:00:29.988",
-      "end_time": "00:00:30.800",
-      "start_seconds": 29.988,
-      "end_seconds": 30.8,
-      "verbatim_quote": "Understood.",
+      "speaker": "Customer",
+      "start_time": "00:00:34.800",
+      "end_time": "00:00:40.800",
+      "start_seconds": 34.8,
+      "end_seconds": 40.8,
+      "verbatim_quote": "engineers. Thank you. We will monitor the emergency Slack channel for their immediate response.",
       "supporting_signals": {
-        "emotion": "neutral",
-        "sentiment": "negative"
-      }
-    },
-    {
-      "turn_id": 8,
-      "speaker": "Agent",
-      "start_time": "00:00:30.800",
-      "end_time": "00:00:36.572",
-      "start_seconds": 30.8,
-      "end_seconds": 36.572,
-      "verbatim_quote": "I have escalated this as a severity one emergency to our senior site reliability engineers.",
-      "supporting_signals": {
-        "emotion": "neutral",
-        "sentiment": "negative"
-      }
-    },
-    {
-      "turn_id": 9,
-      "speaker": "Agent",
-      "start_time": "00:00:36.572",
-      "end_time": "00:00:41.900",
-      "start_seconds": 36.572,
-      "end_seconds": 41.9,
-      "verbatim_quote": "Thank you, we will monitor the emergency slack channel for their immediate response.",
-      "supporting_signals": {
-        "emotion": "neutral",
+        "emotion": "joy",
         "sentiment": "neutral"
       }
     }
@@ -164,7 +138,7 @@
   "metadata": {
     "qa_score": 40.0,
     "qa_status": "NEEDS_COACHING",
-    "de_escalated": false,
+    "de_escalated": true,
     "shap_drivers": [
       {
         "feature": "Age",

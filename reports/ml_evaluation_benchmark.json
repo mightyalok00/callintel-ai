@@ -1,0 +1,405 @@
+{
+  "evaluation_timestamp": "2026-10-12",
+  "churn_model_evaluation": {
+    "model_domain_clarification": {
+      "model_type": "Static Tabular Banking Account Propensity Model",
+      "training_source": "Kaggle Bank Customer Churn Dataset (165,031 records)",
+      "important_distinction": "This model is trained strictly on bank account metadata (CreditScore, Balance, Tenure, Products, Salary). It is NOT trained on speech audio or call dialogue. In-call signals (frustration, cancellation warnings) are real-time operational heuristics applied to this baseline."
+    },
+    "dataset_split": {
+      "total_records": 165031,
+      "train_records": 132024,
+      "test_records": 33007,
+      "split_ratio": "80/20 Stratified",
+      "random_seed": 42,
+      "class_imbalance": {
+        "class_0_retained": 130110,
+        "class_1_churned": 34921,
+        "churn_rate": 0.2116,
+        "scale_pos_weight": 3.726
+      }
+    },
+    "baseline_comparison": [
+      {
+        "model": "Prevalence Dummy Classifier",
+        "roc_auc": 0.5,
+        "pr_auc": 0.6058,
+        "brier_score": 0.1668,
+        "ece": 0.0,
+        "f1_score": 0.0,
+        "description": "Predicts positive class prevalence (0.2116) blindly"
+      },
+      {
+        "model": "Logistic Regression (Balanced)",
+        "roc_auc": 0.8093,
+        "pr_auc": 0.5574,
+        "brier_score": 0.1747,
+        "ece": 0.2031,
+        "f1_score": 0.5496,
+        "description": "Standard linear baseline with balanced class weights"
+      },
+      {
+        "model": "Random Forest (100 Trees, Depth 10)",
+        "roc_auc": 0.8766,
+        "pr_auc": 0.6885,
+        "brier_score": 0.1392,
+        "ece": 0.1681,
+        "f1_score": 0.6306,
+        "description": "Non-linear ensemble baseline with balanced weights"
+      },
+      {
+        "model": "XGBoost Classifier (Production)",
+        "roc_auc": 0.8808,
+        "pr_auc": 0.7109,
+        "brier_score": 0.1363,
+        "ece": 0.158,
+        "f1_score": 0.6331,
+        "description": "Production gradient boosted tree with scale_pos_weight"
+      },
+      {
+        "model": "XGBoost + Platt Sigmoid Calibration",
+        "roc_auc": 0.8808,
+        "pr_auc": 0.7109,
+        "brier_score": 0.099,
+        "ece": 0.0072,
+        "f1_score": 0.6331,
+        "description": "Post-hoc Platt scaling calibration for optimized probability reliability"
+      }
+    ],
+    "production_xgboost_metrics": {
+      "roc_auc": 0.8808,
+      "pr_auc": 0.7109,
+      "pr_auc_lift_over_baseline": 0.4993,
+      "brier_score": 0.1363,
+      "expected_calibration_error": 0.158,
+      "accuracy": 0.8079,
+      "precision": 0.5313,
+      "recall": 0.7834,
+      "f1_score": 0.6331,
+      "confusion_matrix": [
+        [
+          21196,
+          4827
+        ],
+        [
+          1513,
+          5471
+        ]
+      ]
+    },
+    "calibration_reliability_bins": [
+      {
+        "bin_index": 0,
+        "range": "[0.0, 0.1]",
+        "count": 8030,
+        "confidence": 0.0586,
+        "accuracy": 0.0169,
+        "calibration_gap": 0.0417
+      },
+      {
+        "bin_index": 1,
+        "range": "[0.1, 0.2]",
+        "count": 5851,
+        "confidence": 0.1449,
+        "accuracy": 0.0436,
+        "calibration_gap": 0.1013
+      },
+      {
+        "bin_index": 2,
+        "range": "[0.2, 0.3]",
+        "count": 3500,
+        "confidence": 0.2465,
+        "accuracy": 0.0894,
+        "calibration_gap": 0.1571
+      },
+      {
+        "bin_index": 3,
+        "range": "[0.3, 0.4]",
+        "count": 2765,
+        "confidence": 0.3496,
+        "accuracy": 0.1306,
+        "calibration_gap": 0.219
+      },
+      {
+        "bin_index": 4,
+        "range": "[0.4, 0.5]",
+        "count": 2563,
+        "confidence": 0.4483,
+        "accuracy": 0.1748,
+        "calibration_gap": 0.2735
+      },
+      {
+        "bin_index": 5,
+        "range": "[0.5, 0.6]",
+        "count": 1936,
+        "confidence": 0.5488,
+        "accuracy": 0.2552,
+        "calibration_gap": 0.2937
+      },
+      {
+        "bin_index": 6,
+        "range": "[0.6, 0.7]",
+        "count": 1846,
+        "confidence": 0.6498,
+        "accuracy": 0.3294,
+        "calibration_gap": 0.3204
+      },
+      {
+        "bin_index": 7,
+        "range": "[0.7, 0.8]",
+        "count": 1709,
+        "confidence": 0.7504,
+        "accuracy": 0.4541,
+        "calibration_gap": 0.2963
+      },
+      {
+        "bin_index": 8,
+        "range": "[0.8, 0.9]",
+        "count": 2112,
+        "confidence": 0.8508,
+        "accuracy": 0.6127,
+        "calibration_gap": 0.2381
+      },
+      {
+        "bin_index": 9,
+        "range": "[0.9, 1.0]",
+        "count": 2695,
+        "confidence": 0.9498,
+        "accuracy": 0.8531,
+        "calibration_gap": 0.0968
+      }
+    ],
+    "feature_importances": {
+      "NumOfProducts": 0.4113,
+      "Age": 0.1442,
+      "IsActiveMember": 0.1339,
+      "Geography_Berlin-Germany": 0.0971,
+      "Gender_Male": 0.0459,
+      "Gender_Female": 0.0377,
+      "Geography_Paris-France": 0.0362,
+      "Balance": 0.0305,
+      "Geography_Madrid-Spain": 0.0144,
+      "HasCrCard": 0.0117,
+      "CreditScore": 0.0072,
+      "EstimatedSalary": 0.0065,
+      "Tenure": 0.0063,
+      "Geography_Unknown": 0.0062,
+      "Rating": 0.0055,
+      "Gender_Unknown": 0.0055
+    }
+  },
+  "meld_emotion_evaluation": {
+    "dataset_split": {
+      "test_turns": 2610,
+      "test_dialogues": 280,
+      "class_imbalance": {
+        "neutral": {
+          "count": 1256,
+          "percentage": 48.12
+        },
+        "joy": {
+          "count": 402,
+          "percentage": 15.4
+        },
+        "anger": {
+          "count": 345,
+          "percentage": 13.22
+        },
+        "surprise": {
+          "count": 281,
+          "percentage": 10.77
+        },
+        "sadness": {
+          "count": 208,
+          "percentage": 7.97
+        },
+        "disgust": {
+          "count": 68,
+          "percentage": 2.61
+        },
+        "fear": {
+          "count": 50,
+          "percentage": 1.92
+        }
+      }
+    },
+    "emotion_evaluation": {
+      "majority_baseline_accuracy": 0.4812,
+      "majority_baseline_class": "neutral",
+      "accuracy": 0.4372,
+      "macro_f1": 0.3087,
+      "weighted_f1": 0.4461,
+      "classification_report": {
+        "anger": {
+          "precision": 0.2809667673716012,
+          "recall": 0.26956521739130435,
+          "f1-score": 0.27514792899408286,
+          "support": 345.0
+        },
+        "disgust": {
+          "precision": 0.1,
+          "recall": 0.08823529411764706,
+          "f1-score": 0.09375,
+          "support": 68.0
+        },
+        "fear": {
+          "precision": 0.07058823529411765,
+          "recall": 0.12,
+          "f1-score": 0.08888888888888889,
+          "support": 50.0
+        },
+        "joy": {
+          "precision": 0.358974358974359,
+          "recall": 0.4527363184079602,
+          "f1-score": 0.4004400440044004,
+          "support": 402.0
+        },
+        "neutral": {
+          "precision": 0.6424242424242425,
+          "recall": 0.5063694267515924,
+          "f1-score": 0.566340160284951,
+          "support": 1256.0
+        },
+        "sadness": {
+          "precision": 0.27074235807860264,
+          "recall": 0.2980769230769231,
+          "f1-score": 0.2837528604118993,
+          "support": 208.0
+        },
+        "surprise": {
+          "precision": 0.38235294117647056,
+          "recall": 0.5551601423487544,
+          "f1-score": 0.4528301886792453,
+          "support": 281.0
+        },
+        "accuracy": 0.4371647509578544,
+        "macro avg": {
+          "precision": 0.30086412904562765,
+          "recall": 0.3271633317277402,
+          "f1-score": 0.30873572446620967,
+          "support": 2610.0
+        },
+        "weighted avg": {
+          "precision": 0.4682801050771596,
+          "recall": 0.4371647509578544,
+          "f1-score": 0.4460963589806948,
+          "support": 2610.0
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "anger",
+          "disgust",
+          "fear",
+          "joy",
+          "neutral",
+          "sadness",
+          "surprise"
+        ],
+        "matrix": [
+          [
+            93,
+            12,
+            13,
+            44,
+            91,
+            40,
+            52
+          ],
+          [
+            12,
+            6,
+            5,
+            4,
+            24,
+            4,
+            13
+          ],
+          [
+            8,
+            2,
+            6,
+            4,
+            21,
+            6,
+            3
+          ],
+          [
+            20,
+            12,
+            9,
+            182,
+            119,
+            23,
+            37
+          ],
+          [
+            147,
+            23,
+            35,
+            207,
+            636,
+            79,
+            129
+          ],
+          [
+            31,
+            2,
+            9,
+            34,
+            52,
+            62,
+            18
+          ],
+          [
+            20,
+            3,
+            8,
+            32,
+            47,
+            15,
+            156
+          ]
+        ]
+      }
+    },
+    "sentiment_evaluation": {
+      "accuracy": 0.5261,
+      "macro_f1": 0.5055,
+      "weighted_f1": 0.5293,
+      "classification_report": {
+        "negative": {
+          "precision": 0.5139949109414759,
+          "recall": 0.4849939975990396,
+          "f1-score": 0.4990735021618283,
+          "support": 833.0
+        },
+        "neutral": {
+          "precision": 0.6125743415463042,
+          "recall": 0.5740445859872612,
+          "f1-score": 0.5926839293053843,
+          "support": 1256.0
+        },
+        "positive": {
+          "precision": 0.38330757341576505,
+          "recall": 0.4760076775431862,
+          "f1-score": 0.4246575342465753,
+          "support": 521.0
+        },
+        "accuracy": 0.5260536398467432,
+        "macro avg": {
+          "precision": 0.5032922753011816,
+          "recall": 0.5116820870431623,
+          "f1-score": 0.5054716552379293,
+          "support": 2610.0
+        },
+        "weighted avg": {
+          "precision": 0.5353465055731882,
+          "recall": 0.5260536398467432,
+          "f1-score": 0.5292665968777132,
+          "support": 2610.0
+        }
+      }
+    }
+  }
+}

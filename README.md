@@ -20,7 +20,7 @@ The **AI Call Intelligence Engine** is a comprehensive Data Science, Speech AI, 
 - **Target Domains**: Customer Support (ticket categorization, escalation, QA), Sales (buying signals, objections, competitor tracking), Retention (cancellation risk, churn mitigation).
 - **Deployment**: Hybrid architecture — local-first models (`faster-whisper`, scikit-learn, XGBoost, local Ollama) with seamless optional cloud LLM API fallback.
 - **Deliverable**: Full portfolio project with FastAPI backend, WebSocket streaming, PostgreSQL/SQLite database, and an executive Streamlit Analytics Dashboard with an auditable **Evidence Ledger**.
-- **Speech Emotion & Conversation Dataset**: Ingested directly from **`D:\MELD-master`** (13,708 multi-turn conversation utterances across 1,432 dialogues).
+- **Speech Emotion & Conversation Dataset**: Bundled directly in **`data/meld`** (13,708 multi-turn conversation utterances across 1,432 dialogues from the MELD dataset).
 
 ---
 
@@ -30,20 +30,20 @@ The **AI Call Intelligence Engine** is a comprehensive Data Science, Speech AI, 
 graph TB
     subgraph Ingestion["1. Ingestion Layer"]
         A1[Recorded Call Audio Files] --> B1[Validation & Audio Normalization 16kHz Mono]
-        A2[Live Microphone Audio Stream] --> B2[WebSocket Streaming Server & Audio Chunks]
+        A2[Live Microphone Audio Stream] --> B2[WebSocket Streaming Server & Real Audio Chunks]
     end
 
     subgraph Speech["2. Speech Intelligence Layer"]
         B1 & B2 --> C1[VAD: Voice Activity Detection]
         C1 --> C2[ASR: faster-whisper / Whisper Base]
-        C2 --> C3[Speaker Diarization / Turn Segmentation]
+        C2 --> C3[Acoustic Speaker Diarization / Voice Feature Clustering]
     end
 
     subgraph NLP_ML["3. NLP & Predictive ML Pipeline"]
-        C3 --> D1[Emotion & Sentiment Classifier\nTrained on MELD: D:\MELD-master]
+        C3 --> D1[Emotion & Sentiment Classifier\nTrained on MELD: data/meld]
         C3 --> D2[Customer Intent & Objection Classifier\n10 Commercial Call Classes]
         C3 --> D3[Topic & Unmet Needs Extractor\nSentence Embeddings + Clustering]
-        C3 --> D4[Predictive Churn Risk Model\nXGBoost + SHAP Explainability]
+        C3 --> D4[Predictive Churn Risk Model\nAccount Tabular XGBoost + TreeSHAP]
     end
 
     subgraph MultiAgent["4. Multi-Agent Intelligence & Evidence Ledger"]
@@ -68,9 +68,9 @@ graph TB
 
 ## 3. Dataset Architecture
 
-### Primary Dataset: MELD (`D:\MELD-master`)
+### Primary Dataset: MELD (`data/meld`)
 
-- **Location**: `D:\MELD-master\data\MELD`
+- **Location**: `data/meld` (bundled JSON files, see [DATASETS_AND_MODELS.md](file:///e:/ai/docs/DATASETS_AND_MODELS.md))
 - **Volume**: 13,708 utterances across 1,432 dialogues.
   - **Train**: 9,989 utterances (1,038 dialogues)
   - **Dev**: 1,109 utterances (114 dialogues)
@@ -79,12 +79,12 @@ graph TB
   - `Emotion`: 7 discrete emotions (`neutral`, `joy`, `surprise`, `anger`, `sadness`, `disgust`, `fear`)
   - `Sentiment`: 3 polarity classes (`positive`, `neutral`, `negative`)
   - `Speaker`, `StartTime`, `EndTime` for turn-by-turn conversation dynamics.
-- **Ingestion**: Automated via `training/ingest_meld.py` into `data/meld/`.
+- **Ingestion**: Bundled in repository. Raw CSV ingestion supported via `training/ingest_meld.py`.
 
 ### Supplementary Datasets
 
-1. **Commercial Call Intent Dataset**: 10-class intent taxonomy (Pricing Objections, Cancellation Warnings, Feature Requests, Bug Reports, Account Access, Upgrade Inquiries, Competitor Comparisons, Service Complaints, Product Questions, General Inquiries).
-2. **Customer Churn Dataset**: Supervised tabular dataset (`bank_churn_cleaned.csv`) for training XGBoost risk scoring with SHAP feature attributions.
+1. **Customer Churn Dataset**: Supervised tabular banking dataset (`data/churn/bank_churn_cleaned.csv`, 165,031 records) for training account-level XGBoost propensity scoring with SHAP feature attributions. *Note: Tabular account data, distinct from in-call conversational modifiers.*
+2. **Demo Multi-Speaker Calls**: 3 synthesized dialogues (`data/samples/*.wav`) featuring distinct voices for Agent (`David`) and Customer (`Zira`).
 
 ---
 
@@ -98,38 +98,39 @@ e:\ai\
 ├── configs/
 │   ├── app_config.yaml                 # Application & server configuration
 │   └── models_config.yaml              # Model hyperparameters & paths
+├── docs/
+│   └── DATASETS_AND_MODELS.md          # Dataset acquisition, licenses, artifacts & deployment
 ├── data/
-│   ├── meld/                           # Processed MELD dataset from D:\MELD-master
+│   ├── meld/                           # Processed MELD dataset bundled in repository
 │   │   ├── meld_train_dialogues.json   # 1,038 dialogues (9,989 turns)
 │   │   ├── meld_dev_dialogues.json     # 114 dialogues (1,109 turns)
 │   │   ├── meld_test_dialogues.json    # 280 dialogues (2,610 turns)
 │   │   └── meld_summary_metadata.json  # Class distributions & metadata
-│   ├── churn/                          # Tabular churn data for predictive ML
-│   └── samples/                        # Synthetic sample audio (.wav) for demos
+│   ├── churn/                          # Tabular churn data for predictive ML (165k rows)
+│   └── samples/                        # Multi-speaker sample audio (.wav) for demos
 ├── src/
 │   └── callintel/
 │       ├── core/                       # App settings, logging, PII security
 │       ├── schemas/                    # Pydantic schemas (Transcript, Turn, Evidence)
-│       ├── speech/                     # faster-whisper, VAD, audio normalization
-│       ├── ml/                         # Emotion, Intent, Churn & Topic models
-│       ├── agents/                     # 6 specialized agents + supervisor
+│       ├── speech/                     # faster-whisper, Acoustic Diarizer, audio utils
+│       ├── ml/                         # MELD Emotion & Tabular Churn + In-Call Modifier
+│       ├── agents/                     # Specialized agents + supervisor
 │       ├── providers/                  # Hybrid LLM interface (Ollama / Cloud / Rule Fallback)
 │       ├── db/                         # SQLAlchemy ORM models & repository
-│       ├── api/                        # FastAPI routes & WebSocket streamer
+│       ├── api/                        # FastAPI REST routes & WebSocket streamer
 │       └── services/                   # Audio pipeline & live session manager
 ├── dashboard/
 │   ├── app.py                          # Streamlit application entrypoint
-│   ├── components/                     # Audio player, Evidence Ledger widget
-│   └── pages/                          # Multi-page dashboard views
+│   └── components/                     # Audio player, Evidence Ledger widget
 ├── training/
-│   ├── ingest_meld.py                  # Ingestion script for D:\MELD-master
+│   ├── ingest_meld.py                  # Portable MELD ingestion script
 │   ├── train_emotion.py                # Emotion classifier training
-│   ├── train_intent.py                 # Intent classifier training
-│   └── train_churn.py                  # XGBoost churn model + SHAP explainer
+│   ├── train_churn.py                  # Tabular XGBoost churn model + SHAP explainer
+│   └── evaluate_ml_models.py           # Comprehensive ML evaluation & baseline benchmarks
 └── tests/
-    ├── unit/                           # Audio processing & schema tests
-    ├── integration/                    # Pipeline end-to-end tests
-    └── api/                            # REST & WebSocket tests
+    ├── unit/                           # Audio, ML models, diarizer & schema tests
+    ├── api/                            # REST & WebSocket API tests
+    └── integration/                    # End-to-end audio pipeline & live streaming tests
 ```
 
 ---

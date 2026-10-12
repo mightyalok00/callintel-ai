@@ -1,6 +1,7 @@
-r"""
+"""
 Dataset ingestion and verification script for MELD (Multimodal EmotionLines Dataset).
-Source path: D:\MELD-master\data\MELD
+Default source directory is relative to workspace: data/meld_raw or env var MELD_DATA_DIR.
+Bundled processed files are in data/meld/.
 """
 
 import os
@@ -9,13 +10,26 @@ import json
 from pathlib import Path
 from collections import Counter
 
-MELD_SOURCE_DIR = Path(os.getenv("MELD_DATA_DIR", r"D:\MELD-master\data\MELD"))
-DEST_DIR = Path(os.getenv("DEST_MELD_DIR", r"data/meld"))
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+MELD_SOURCE_DIR = Path(os.getenv("MELD_DATA_DIR", PROJECT_ROOT / "data" / "meld_raw"))
+DEST_DIR = Path(os.getenv("DEST_MELD_DIR", PROJECT_ROOT / "data" / "meld"))
 
 def inspect_and_ingest():
+    # If already ingested and bundled in repo, verify and summarize
+    bundled_train = DEST_DIR / "meld_train_dialogues.json"
+    if not MELD_SOURCE_DIR.exists() and bundled_train.exists():
+        print(f"[+] Processed MELD dataset already bundled in repository at: {DEST_DIR}")
+        print("    No external ingestion required. To re-ingest from raw CSVs, set MELD_DATA_DIR.")
+        return
+
     print(f"[*] Checking MELD source directory at: {MELD_SOURCE_DIR}")
     if not MELD_SOURCE_DIR.exists():
-        raise FileNotFoundError(f"Source directory not found: {MELD_SOURCE_DIR}")
+        raise FileNotFoundError(
+            f"Source directory not found: {MELD_SOURCE_DIR}. "
+            "Download raw MELD CSV files (train_sent_emo.csv, dev_sent_emo.csv, test_sent_emo.csv) "
+            "from https://github.com/declare-lab/MELD and place them in data/meld_raw/ "
+            "or set the MELD_DATA_DIR environment variable."
+        )
     
     DEST_DIR.mkdir(parents=True, exist_ok=True)
     

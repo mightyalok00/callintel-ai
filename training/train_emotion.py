@@ -1,6 +1,6 @@
-r"""
+"""
 Production Training Script for Emotion and Sentiment Classification using MELD Dataset.
-Source: D:\MELD-master\data\MELD
+Dataset directory: data/meld/
 """
 
 import json
@@ -17,9 +17,10 @@ from sklearn.metrics import (
     accuracy_score,
 )
 
-DATA_DIR = Path("data/meld")
-MODELS_DIR = Path("models")
-REPORTS_DIR = Path("reports")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = PROJECT_ROOT / "data" / "meld"
+MODELS_DIR = PROJECT_ROOT / "models"
+REPORTS_DIR = PROJECT_ROOT / "reports"
 
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -82,7 +83,7 @@ def train_and_evaluate():
     all_train_sentiments = train_sentiments + dev_sentiments
 
     report_data = {
-        "dataset": "MELD (D:\\MELD-master)",
+        "dataset": "MELD Conversational Dataset (data/meld)",
         "train_samples": len(all_train_texts),
         "test_samples": len(test_texts),
         "models": {}
