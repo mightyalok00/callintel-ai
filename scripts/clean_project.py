@@ -27,7 +27,8 @@ def clean_project():
         if ".venv" in path.parts:
             continue
 
-        if path.name in CACHE_PATTERNS or path.suffix in [".pyc", ".pyo"]:
+        is_egg_info = path.is_dir() and path.name.endswith(".egg-info")
+        if path.name in CACHE_PATTERNS or path.suffix in [".pyc", ".pyo"] or is_egg_info:
             try:
                 if path.is_dir():
                     shutil.rmtree(path)

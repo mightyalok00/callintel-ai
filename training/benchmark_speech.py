@@ -440,11 +440,10 @@ A valid diarization error rate (DER) requires time-aligned reference speech regi
 - **Handling Overlap**: When conversational overlap occurs, energy-weighted pitch extraction identifies the dominant fundamental frequency ($F_0$).
 """
 
-    for report_filename in ["SPEECH_BENCHMARK.md", "SPEECH_BENCHMARK_REPORT.md"]:
-        target_file = REPORTS_DIR / report_filename
-        with open(target_file, "w", encoding="utf-8") as f:
-            f.write(md_content)
-        print(f"[OK] Saved Markdown benchmark report: {target_file}")
+    target_file = REPORTS_DIR / "SPEECH_BENCHMARK.md"
+    with open(target_file, "w", encoding="utf-8") as f:
+        f.write(md_content)
+    print(f"[OK] Saved Markdown benchmark report: {target_file}")
 
 
 
