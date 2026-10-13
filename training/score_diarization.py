@@ -49,12 +49,9 @@ def main() -> int:
     for recording in sorted(reference):
         value = float(metric(reference[recording], hypothesis[recording]))
         per_recording.append({"recording_id": recording, "der": value})
-    # Micro DER from the scorer is the headline metric. CI is a recording-level
-    # macro-DER interval; this estimand is explicit rather than mixing turns.
-    overall = float(metric(
-        __import__("functools").reduce(lambda a, b: a.update(b) or a, reference.values()),
-        __import__("functools").reduce(lambda a, b: a.update(b) or a, hypothesis.values())
-    ))
+    # Report macro-average recording DER. The CI uses the same estimand and
+    # resamples whole recordings, preserving within-recording dependence.
+    overall = sum(row["der"] for row in per_recording) / len(per_recording)
     ci = None
     if len(per_recording) >= 2 and args.bootstrap:
         vals = [row["der"] for row in per_recording]
@@ -62,11 +59,11 @@ def main() -> int:
         samples = sorted(sum(vals[rng.randrange(len(vals))] for _ in vals) / len(vals) for _ in range(args.bootstrap))
         ci = {"lower_95": samples[int(0.025 * (len(samples)-1))], "upper_95": samples[int(0.975 * (len(samples)-1))], "method": "percentile bootstrap resampling recordings; macro-average DER", "replicates": args.bootstrap, "seed": args.seed}
     result = {
-        "metric": "DER", "micro_der": overall, "micro_der_percent": overall * 100,
+        "metric": "DER", "macro_der": overall, "macro_der_percent": overall * 100,
         "recordings": len(per_recording), "collar_seconds": args.collar, "skip_overlap": args.skip_overlap,
         "per_recording_macro_der": sum(x["der"] for x in per_recording) / len(per_recording),
         "macro_der_confidence_interval_95": ci, "per_recording": per_recording,
-        "note": "Requires independently human-verified reference RTTM. CI is macro-average DER across recordings; micro DER is the aggregate headline."
+        "note": "Requires independently human-verified reference RTTM. Both DER and CI use macro-average recording DER; this is not duration-weighted micro DER."
     }
     print(json.dumps(result, indent=2))
     return 0
