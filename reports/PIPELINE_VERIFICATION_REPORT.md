@@ -5,19 +5,19 @@ This report provides automated, deterministic proof of end-to-end execution acro
 
 ## 1. Executive Summary
 
-- **Verification Timestamp**: `2026-10-13T07:28:05Z`
+- **Verification Timestamp**: `2026-10-13T08:00:17Z`
 - **Overall Pipeline Status**: `PASSED`
 - **Total Calls Processed**: `2`
-- **End-to-End Wall Time**: `8.31 seconds`
-- **Model Initialization Latency**: `735.36 ms`
+- **End-to-End Wall Time**: `7.21 seconds`
+- **Model Initialization Latency**: `394.03 ms`
 - **Evidence Ledger Grounding Pass Rate**: `100.0%` (8/8 grounded claims)
 
 ## 2. Call-by-Call Verification Results
 
 | Call ID | Turns | Primary Intent | Sentiment | Churn Risk | ASR Latency | Emotion Latency | Grounding Pass Rate |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| `VERIFY_CALL_001_CHURN_RISK` | 9 | `pricing_objection` | `mixed` | `99.0% (SeverityLevel.CRITICAL)` | 4,449 ms | 24 ms | 100.0% |
-| `VERIFY_CALL_002_TECH_SUPPORT` | 8 | `general_inquiry` | `mixed` | `56.4% (SeverityLevel.ELEVATED)` | 2,997 ms | 21 ms | 100.0% |
+| `VERIFY_CALL_001_CHURN_RISK` | 9 | `pricing_objection` | `mixed` | `99.0% (SeverityLevel.CRITICAL)` | 3,859 ms | 21 ms | 100.0% |
+| `VERIFY_CALL_002_TECH_SUPPORT` | 8 | `general_inquiry` | `mixed` | `56.4% (SeverityLevel.ELEVATED)` | 2,871 ms | 16 ms | 100.0% |
 
 ## 3. Subsystem Invariant & Integrity Verification
 

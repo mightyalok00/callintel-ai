@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-10-13T07:28:05Z",
+  "timestamp": "2026-10-13T08:00:17Z",
   "calls_evaluated": 2,
   "stage_timings_ms": {
-    "model_initialization": 735.36
+    "model_initialization": 394.03
   },
   "pipeline_stages": {},
   "call_results": [
@@ -15,9 +15,9 @@
       "churn_score": 0.99,
       "churn_level": "SeverityLevel.CRITICAL",
       "timings_ms": {
-        "asr": 4448.91,
-        "emotion": 23.9,
-        "churn": 56.2,
+        "asr": 3858.61,
+        "emotion": 20.84,
+        "churn": 24.16,
         "agents": 2.0
       },
       "evidence_audit": {
@@ -37,10 +37,10 @@
       "churn_score": 0.5644,
       "churn_level": "SeverityLevel.ELEVATED",
       "timings_ms": {
-        "asr": 2997.31,
-        "emotion": 21.23,
-        "churn": 21.87,
-        "agents": 2.15
+        "asr": 2871.08,
+        "emotion": 15.79,
+        "churn": 25.03,
+        "agents": 0.0
       },
       "evidence_audit": {
         "total_findings": 3,
@@ -52,7 +52,7 @@
     }
   ],
   "overall_status": "PASSED",
-  "total_execution_seconds": 8.31,
+  "total_execution_seconds": 7.21,
   "aggregate_audit": {
     "total_findings": 8,
     "supported_count": 8,

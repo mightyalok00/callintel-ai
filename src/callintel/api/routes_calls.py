@@ -119,7 +119,7 @@ def cleanup_runtime_artifacts(call_id: Optional[str] = None) -> int:
                     continue
                 if purge_all_files:
                     should_delete = True
-                elif call_id:
+                elif token is not None:
                     should_delete = bool(token.search(artifact.name))
                 else:
                     # During history deletion, remove artifacts that identify a

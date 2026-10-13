@@ -52,8 +52,10 @@ class MeldClassifier:
         """
         if not self.is_ready:
             self._load_models()
-            if not self.is_ready:
+            if not self.is_ready or self.emotion_model is None or self.sentiment_model is None:
                 raise RuntimeError("Models not loaded. Please run train_emotion.py first.")
+        if self.emotion_model is None or self.sentiment_model is None:
+            raise RuntimeError("Models not loaded. Please run train_emotion.py first.")
 
         # Build contextual representation
         if prev_speaker and prev_utterance:

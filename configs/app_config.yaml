@@ -12,7 +12,7 @@ server:
   reload: true
 
 database:
-  url: "sqlite:///./call_intelligence.db"
+  url: "sqlite:///./callintel.db"
 
 storage:
   samples_dir: "data/samples"

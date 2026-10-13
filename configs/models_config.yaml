@@ -9,7 +9,7 @@ speech:
   min_silence_duration_ms: 500
 
 emotion_sentiment:
-  dataset_source: "D:\\MELD-master\\data\\MELD"
+  dataset_source: "data/meld"
   model_path: "models/emotion_pipeline.joblib"
   sentiment_path: "models/sentiment_pipeline.joblib"
   confidence_threshold: 0.30
