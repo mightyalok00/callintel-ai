@@ -460,15 +460,15 @@ def evaluate_meld_models() -> Dict[str, Any]:
         raise ValueError("MELD train and test splits must contain labelled non-empty utterances.")
 
     labels = sorted(set(y_train.tolist()) | set(y_test.tolist()))
-    # No dialogue IDs overlap across official splits.
-    overlap = set(train_dialogues) & set(test_dialogues)
-    if overlap:
-        raise ValueError(f"Train/test dialogue leakage detected: {len(overlap)} shared IDs")
+    # MELD's Dialogue_ID is local to each split and is reused (e.g. "0", "1")
+    # across train/dev/test. Comparing those raw keys across files creates false
+    # positives; split membership comes from the official files. Keep split-local
+    # IDs for dialogue bootstrap grouping and do not claim cross-split leakage
+    # detection from non-global IDs.
     if dev_path.exists():
         dev_dialogues = _load_meld_dialogues(dev_path)
-        dev_overlap = (set(train_dialogues) & set(dev_dialogues)) | (set(test_dialogues) & set(dev_dialogues))
-        if dev_overlap:
-            raise ValueError(f"Dialogue leakage across official splits: {len(dev_overlap)} shared IDs")
+        if not dev_dialogues:
+            raise ValueError("MELD dev split exists but contains no dialogues.")
 
     vectorizer = TfidfVectorizer(
         lowercase=True, strip_accents="unicode", ngram_range=(1, 2),
