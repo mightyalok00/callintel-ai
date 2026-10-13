@@ -13,7 +13,7 @@ def test_split_local_dialogue_ids_are_not_compared_across_splits(tmp_path, monke
     data.mkdir(); raw.mkdir()
     monkeypatch.setattr(validator, "EXPECTED", {s: {"utterances": 1, "dialogues": 1} for s in ("train", "dev", "test")})
     for split in ("train", "dev", "test"):
-        (data / f"meld_{split}_dialogues.json").write_text(json.dumps({"0": [_turn()]}), encoding="utf-8")
+        (data / f"meld_{split}_dialogues.json").write_text(json.dumps({"0": [_turn(text=split)]}), encoding="utf-8")
     result = validator.validate_meld_splits(data, raw)
     assert result["splits"]["train"]["dialogues"] == 1
     assert result["raw_csv_provenance"].startswith("partial")
