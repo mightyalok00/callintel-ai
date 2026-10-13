@@ -59,6 +59,10 @@ jobs:
         env:
           PYTHONPATH: .
         run: python training/benchmark_speech.py
+      - name: Publish emotion metrics and per-class F1
+        env:
+          PYTHONPATH: .
+        run: python training/publish_evaluation_summary.py
       - name: Upload evaluation reports
         if: always()
         uses: actions/upload-artifact@v4
