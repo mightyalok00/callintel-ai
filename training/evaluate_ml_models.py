@@ -513,6 +513,7 @@ def evaluate_meld_models() -> Dict[str, Any]:
 
     return {
         "evaluation_mode": "official_meld_train_test_dialogue_split_text_only",
+        "feature_mode": "text_only_no_label_derived_acoustic_features",
         "dataset": "MELD (scripted TV dialogue emotion dataset)",
         "model": {
             "name": "TF-IDF word unigram/bigram + class-weighted LogisticRegression",
