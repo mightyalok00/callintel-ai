@@ -172,15 +172,14 @@ callintel-ai/
 
 ## 6. Model Benchmarks & Statistical Integrity
 
-### MELD Emotion & Sentiment Classifiers (Acoustic-Lexical Multimodal Fusion)
+### MELD Emotion & Sentiment — Validated Scope
 
-- **Dataset**: MELD (13,708 conversational turns across 1,432 multi-turn dialogues).
-- **Architecture**: Contextual TF-IDF + Calibrated Linear Support Vector Machine (`SGDClassifier(loss='log_loss')`) fused with prosodic acoustic cues (fundamental frequency F0 pitch, spectral centroid, voiced ratio, RMS energy) via calibrated late fusion ($0.75 \text{ text} + 0.25 \text{ acoustic}$).
-- **Benchmark Performance**:
-  - Pure Lexical Text-Only Accuracy: `43.72%` (Macro F1: `0.3087`)
-  - **Multimodal Fused Accuracy**: **`47.85%`** (Macro F1: **`0.3334`**)
-  - Sentiment Polarity Accuracy: **`52.68%`** (Macro F1: **`0.5063`**)
-  - Neutral / Positive / Negative Macro F1: `0.6406`
+- **Dataset:** MELD, 13,708 scripted television dialogue utterances across train/dev/test partitions.
+- **Current held-out emotion baseline:** TF-IDF text-only Logistic Regression; accuracy **42.26% (Linux) / 42.30% (Windows)** and macro-F1 **0.3165 / 0.3166** in the latest recorded successful main-branch evaluation.
+- **Baseline comparison:** the neutral-majority classifier reaches **48.12% accuracy** and **0.0928 macro-F1**. The model improves macro-F1 but does **not** beat majority-class accuracy. Treat this as a weak scripted-dialogue baseline, not call-center emotion performance.
+- **Statistical reporting:** the latest evaluation includes dialogue-bootstrap 95% confidence intervals and per-class metrics; use the machine-readable output and current CI artifacts for the exact run.
+- **Multimodal result withdrawn:** the earlier 47.85% fused accuracy / 0.3334 macro-F1 figures are invalid because acoustic inputs were derived from ground-truth emotion labels. Do not use these scores. Acoustic fusion remains unvalidated until genuine audio features aligned to held-out utterances are evaluated without target leakage.
+- **Sentiment metrics:** historical text-only scores are documented in the reproducible evaluation report. They should not be interpreted as customer-call performance; consult fresh evaluation artifacts before quoting them.
 
 ### Customer Churn Risk Model, TreeSHAP & Cost-Utility (EMV) Optimization
 
@@ -202,20 +201,13 @@ callintel-ai/
 
 ### Speech Processing & Diarization Benchmarks
 
-- **Engine**: `faster-whisper` (`base` model, int8 CPU) + `AcousticDiarizer` (34-dim acoustic vector: F0 pitch, 13 MFCC means & stds, spectral centroid, rolloff, RMS).
-- **Clustering**: $L_2$-normalized Cosine Agglomerative Clustering with unsupervised automatic speaker count discovery ($k^*$) via Cosine Silhouette scoring and temporal continuity smoothing.
-- **Scope**: Multi-scenario evaluation across 4 test calls (retention threat, sales expansion, fast technical escalation, +15dB SNR additive office noise). See full report at [SPEECH_BENCHMARK.md](reports/SPEECH_BENCHMARK.md).
-- **Measured Metrics (Controlled Multi-Scenario Benchmark)**:
-  - **Mean Word Error Rate (WER)**: `1.03%`
-  - **Mean Diarization Error Rate (DER)**: `0.00%` (NIST RT-09 standard with $\pm 0.25$s forgiveness collar)
-  - **Automatic Speaker Count ($k^*$) Discovery**: Tested with zero prior count knowledge across $k \in [1, 3]$
-  - **Real-Time Factor (RTF)**: `0.090x` (>10x faster than real-time on CPU)
-  - **Peak Memory Footprint**: `56.4 MB` (Edge/CPU deployable)
-- **Controlled Fixture vs Real Telephony Disclaimer**:
-  - These metrics reflect controlled multi-speaker dialogues with distinct speaker timbres. Under additive background noise and fast technical exchanges, error rates rise realistically to reflect acoustic degradation.
-  - In unconstrained, low-bitrate real-world telephony (e.g. 8kHz G.711 PSTN with overlapping speech and packet jitter), lightweight acoustic clustering DER typically ranges between $8\%$ and $20\%$. The system pairs speech processing with auditable **Evidence Ledger validation gates** rather than relying on ungrounded transcription in high-stakes workflows.
-
----
+- **Engine:** `faster-whisper` (`base`, CPU int8 where available) and the repository's acoustic speaker-clustering implementation.
+- **Evaluation scope:** four controlled sample recordings only. These are fixtures, not an independently annotated real-call test set.
+- **WER:** the checked-in historical fixture report shows mean WER **1.03%**. This is not evidence of generalizable telephony accuracy; use the freshly generated CI artifact for current fixture measurements.
+- **DER:** **not measured**. The available reference turns lack time-aligned reference timestamps, so a valid DER score cannot be computed. The previous 0.00% DER claim is withdrawn.
+- **Speaker-count discovery:** correct on **2 of 4** fixture recordings (50%); this is a small, controlled sample and not a population estimate.
+- **Runtime:** historical mean real-time factor was approximately **0.09x** on the measured environment. Hardware, dependency versions, and fixture characteristics affect this number.
+- **Real-call validation:** the project does not currently include an independent human-annotated real-call corpus. Follow [the evaluation protocol](docs/EVALUATION_PROTOCOL.md) to score consented, de-identified recordings with human-verified transcripts and RTTM annotations.
 
 ## 7. Verified API & WebSocket Reference
 
@@ -261,7 +253,7 @@ pip install -r requirements.txt
 pytest tests/ -v
 ```
 
-*See the latest [CI workflow run](https://github.com/mightyalok00/callintel-ai/actions/workflows/ci.yml) for the current test count and result.*
+*See the latest [Research Quality Gate workflow](https://github.com/mightyalok00/callintel-ai/actions/workflows/research-quality.yml) for current test and evaluation results.*
 
 ### 3. Launch the FastAPI Service
 
@@ -298,7 +290,7 @@ This boots both the FastAPI backend (`port 8000`) and the Streamlit dashboard (`
 
 ## 9. CI/CD & Automated Safeguards
 
-- **GitHub Actions Workflow** (`.github/workflows/ci.yml`): Runs on every pull request, push to `main`, and manual dispatch (`workflow_dispatch`) across Ubuntu and Windows runners.
+- **GitHub Actions Workflow** (`.github/workflows/research-quality.yml`): Runs on pull requests, pushes to `main`, and manual dispatch (`workflow_dispatch`) across Ubuntu and Windows runners.
 - **Automated Validation**:
   - Python 3.12 syntax and unit test verification.
   - REST & WebSocket API lifecycle test coverage.
