@@ -64,10 +64,14 @@ def validate_meld_splits(data_dir: Path, raw_dir: Path | None = None) -> dict:
                 utterance_count += 1
             canonical_dialogues[str(dialogue_id)] = normalized
             signature = hashlib.sha256(json.dumps(normalized, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
-            if signature in exact_dialogue_hashes:
-                other_split, other_id = exact_dialogue_hashes[signature]
-                raise ValueError(f"Exact duplicate dialogue content across splits: {other_split}/{other_id} and {split}/{dialogue_id}")
-            exact_dialogue_hashes[signature] = (split, str(dialogue_id))
+            # One- and two-turn utterances often repeat naturally ("yes", "yeah").
+            # Only flag exact multi-turn duplicate sequences; this is a diagnostic,
+            # not a substitute for comparing the official source partitions.
+            if len(normalized) >= 3:
+                if signature in exact_dialogue_hashes:
+                    other_split, other_id = exact_dialogue_hashes[signature]
+                    raise ValueError(f"Exact duplicate multi-turn dialogue across splits: {other_split}/{other_id} and {split}/{dialogue_id}")
+                exact_dialogue_hashes[signature] = (split, str(dialogue_id))
         if len(data) != expected["dialogues"] or utterance_count != expected["utterances"]:
             raise ValueError(f"{split}: expected {expected['dialogues']} dialogues/{expected['utterances']} utterances; got {len(data)}/{utterance_count}")
         splits[split] = {"dialogues": len(data), "utterances": utterance_count, "sha256": _sha256(path), "emotion_counts": dict(sorted(emotion_counts.items()))}
