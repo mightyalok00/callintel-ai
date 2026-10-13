@@ -14,7 +14,7 @@ import re
 import time
 import tracemalloc
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, TypedDict, Sequence, Mapping
 import numpy as np
 
 from src.callintel.speech.transcriber import WhisperTranscriber
@@ -24,8 +24,22 @@ REPORTS_DIR = Path("reports")
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 SAMPLES_DIR = Path("data/samples")
 
+
+class GroundTruthTurn(TypedDict):
+    speaker: str
+    text: str
+
+
+class GroundTruthCall(TypedDict):
+    filename: str
+    call_id: str
+    scenario: str
+    reference_text: str
+    turns: List[GroundTruthTurn]
+
+
 # Reference ground truth data matching data/samples/
-GROUND_TRUTH_CALLS = [
+GROUND_TRUTH_CALLS: List[GroundTruthCall] = [
     {
         "filename": "sample_customer_call.wav",
         "call_id": "CALL_2026_APEX_001",
@@ -195,9 +209,16 @@ def compute_wer(reference: str, hypothesis: str) -> Tuple[float, Dict[str, int]]
     return wer, {"substitutions": s, "deletions": d, "insertions": ins, "ref_words": n}
 
 
+class AlignedTurn(TypedDict):
+    hyp_speaker: str
+    ref_speaker: str
+    duration: float
+    overlap_tokens: int
+
+
 def compute_der(
-    ref_turns: List[Dict[str, Any]],
-    hyp_turns: List[Dict[str, Any]],
+    ref_turns: Sequence[Mapping[str, Any]],
+    hyp_turns: Sequence[Mapping[str, Any]],
     collar_seconds: float = 0.25,
 ) -> Dict[str, Any]:
     """Compute a text-aligned speaker-attribution diagnostic, NOT DER.
@@ -217,43 +238,44 @@ def compute_der(
             "collar_seconds": collar_seconds,
         }
 
-    aligned = []
+    aligned: List[AlignedTurn] = []
     for hyp in hyp_turns:
-        hyp_tokens = set(normalize_words(hyp.get("utterance", "")))
+        hyp_tokens = set(normalize_words(str(hyp.get("utterance", ""))))
         best_ref, best_overlap = None, 0
         for ref in ref_turns:
-            overlap = len(hyp_tokens & set(normalize_words(ref.get("text", ""))))
+            overlap = len(hyp_tokens & set(normalize_words(str(ref.get("text", "")))))
             if overlap > best_overlap:
                 best_overlap, best_ref = overlap, ref
         aligned.append({
-            "hyp_speaker": hyp.get("speaker", "Unknown"),
-            "ref_speaker": best_ref.get("speaker", "Unknown") if best_ref else "Unknown",
+            "hyp_speaker": str(hyp.get("speaker", "Unknown")),
+            "ref_speaker": str(best_ref.get("speaker", "Unknown")) if best_ref else "Unknown",
             "duration": max(0.0, float(hyp.get("end_seconds", 0.0)) - float(hyp.get("start_seconds", 0.0))),
-            "overlap_tokens": best_overlap,
+            "overlap_tokens": int(best_overlap),
         })
 
     hyp_speakers = sorted({row["hyp_speaker"] for row in aligned})
     ref_speakers = sorted({row["ref_speaker"] for row in aligned if row["ref_speaker"] != "Unknown"})
-    co_occurrence = {hs: {rs: 0.0 for rs in ref_speakers} for hs in hyp_speakers}
+    co_occurrence: Dict[str, Dict[str, float]] = {hs: {rs: 0.0 for rs in ref_speakers} for hs in hyp_speakers}
     for row in aligned:
         if row["ref_speaker"] in ref_speakers and row["overlap_tokens"] > 0:
-            co_occurrence[row["hyp_speaker"]][row["ref_speaker"]] += row["duration"] * row["overlap_tokens"]
+            co_occurrence[row["hyp_speaker"]][row["ref_speaker"]] += float(row["duration"]) * float(row["overlap_tokens"])
 
-    speaker_map, assigned_refs = {}, set()
-    for hs in sorted(hyp_speakers, key=lambda h: max(co_occurrence[h].values()) if co_occurrence[h] else 0, reverse=True):
+    speaker_map: Dict[str, str] = {}
+    assigned_refs: set[str] = set()
+    for hs in sorted(hyp_speakers, key=lambda h: max(co_occurrence[h].values()) if co_occurrence[h] else 0.0, reverse=True):
         candidates = sorted(
             ((rs, co_occurrence[hs][rs]) for rs in ref_speakers if rs not in assigned_refs),
             key=lambda item: item[1], reverse=True,
         )
-        if candidates and candidates[0][1] > 0:
+        if candidates and candidates[0][1] > 0.0:
             speaker_map[hs] = candidates[0][0]
             assigned_refs.add(candidates[0][0])
         else:
             speaker_map[hs] = "Unmapped"
 
-    total_duration = sum(row["duration"] for row in aligned)
-    error_duration = sum(
-        row["duration"] for row in aligned
+    total_duration: float = sum(float(row["duration"]) for row in aligned)
+    error_duration: float = sum(
+        float(row["duration"]) for row in aligned
         if row["overlap_tokens"] == 0 or speaker_map.get(row["hyp_speaker"], "Unmapped") != row["ref_speaker"]
     )
     proxy_error = round(error_duration / total_duration, 4) if total_duration > 0 else 1.0
@@ -358,9 +380,10 @@ def run_benchmark():
 
     # Compute aggregate statistics
     avg_wer = round(float(np.mean([r["wer"] for r in benchmark_results])), 4)
-    avg_speaker_attribution_error = round(float(np.mean([r["speaker_attribution_error_rate"] for r in benchmark_results])), 4) if benchmark_results else None
+    avg_speaker_attribution_error: float = round(float(np.mean([r["speaker_attribution_error_rate"] for r in benchmark_results])), 4)
     avg_rtf = round(float(np.mean([r["real_time_factor_rtf"] for r in benchmark_results])), 3)
     avg_peak_mem = round(float(np.mean([r["peak_memory_mb"] for r in benchmark_results])), 2)
+    speaker_proxy_display = f"{avg_speaker_attribution_error * 100:.2f}%"
 
     summary_data = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -398,7 +421,7 @@ Diarizer: `AcousticDiarizer (34-dim acoustic vector: F0 pitch, 13 MFCC means & s
 | Metric | Measured Value | Industry Target | Status |
 | :--- | :--- | :--- | :--- |
 | **Mean Word Error Rate (WER)** | **{avg_wer * 100:.2f}%** | < 15.0% | **Controlled-fixture result only** |
-| **Speaker attribution proxy (not DER)** | **{avg_speaker_attribution_error * 100:.2f}%** | Diagnostic only | **Not a DER score** |
+| **Speaker attribution proxy (not DER)** | **{speaker_proxy_display}** | Diagnostic only | **Not a DER score** |
 | **Speaker Count Discovery ($k^*$)** | **{summary_data['summary']['speaker_discovery_accuracy'] * 100:.1f}%** | > 85.0% | **Below target if discovery accuracy is under 85%** |
 | **Real-Time Factor (RTF)** | **{avg_rtf}x** | < 1.0x (faster than real-time) | **Measured on this environment** |
 | **Peak Memory Footprint** | **{avg_peak_mem} MB** | < 1,024 MB | **Measured on this environment** |
