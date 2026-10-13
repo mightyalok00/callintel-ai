@@ -9,12 +9,8 @@ def main():
         raise FileNotFoundError(f"Missing generated report: {report_path}")
     data = json.loads(report_path.read_text(encoding="utf-8"))
     emotion = data.get("meld_emotion_evaluation", data.get("emotion_evaluation", {}))
-    if not emotion:
-        # Current report schema nests MELD evaluation under this key.
-        for value in data.values():
-            if isinstance(value, dict) and "emotion_evaluation" in value:
-                emotion = value["emotion_evaluation"]
-                break
+    if isinstance(emotion, dict) and isinstance(emotion.get("emotion_evaluation"), dict):
+        emotion = emotion["emotion_evaluation"]
     if not emotion:
         raise ValueError("Could not find held-out MELD emotion metrics in report JSON")
     lines = [
@@ -22,7 +18,7 @@ def main():
         "",
         "| Metric | Result |",
         "|---|---:|",
-        f"| Test utterances | {data.get('meld', {}).get('dataset_split', {}).get('test_turns', 'see JSON artifact')} |",
+        f"| Test utterances | {data.get('meld_emotion_evaluation', {}).get('dataset_split', {}).get('test_turns', 'see JSON artifact')} |",
         f"| Accuracy | {emotion.get('accuracy', 'n/a')} |",
         f"| Majority baseline accuracy | {emotion.get('majority_baseline_accuracy', 'n/a')} |",
         f"| Macro-F1 | {emotion.get('macro_f1', 'n/a')} |",
