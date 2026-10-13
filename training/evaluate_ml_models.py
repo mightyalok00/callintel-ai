@@ -386,119 +386,193 @@ def evaluate_churn_models() -> Dict[str, Any]:
     return churn_results
 
 
+def _load_meld_dialogues(path: Path) -> Dict[str, List[Dict[str, Any]]]:
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Missing MELD split {path}. Add the official train/dev/test dialogue JSON files."
+        )
+    with path.open("r", encoding="utf-8") as f:
+        payload = json.load(f)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Expected dialogue-id -> turns mapping in {path}")
+    return payload
+
+
+def _flatten_meld_dialogues(dialogues: Dict[str, List[Dict[str, Any]]]):
+    texts, labels, groups = [], [], []
+    for dialogue_id, turns in dialogues.items():
+        for turn in sorted(turns, key=lambda item: item.get("utterance_id", 0)):
+            text = str(turn.get("utterance", "")).strip()
+            label = str(turn.get("emotion", "")).strip().lower()
+            if text and label:
+                texts.append(text)
+                labels.append(label)
+                groups.append(str(dialogue_id))
+    return texts, np.asarray(labels, dtype=object), np.asarray(groups, dtype=object)
+
+
+def _bootstrap_dialogue_macro_f1(
+    y_true: np.ndarray, y_pred: np.ndarray, groups: np.ndarray,
+    labels: List[str], n_bootstrap: int = 2000, seed: int = 2026,
+) -> Dict[str, Any]:
+    """Percentile CI by resampling whole dialogues, not correlated utterances."""
+    unique_groups = np.unique(groups)
+    indices_by_group = {g: np.flatnonzero(groups == g) for g in unique_groups}
+    rng = np.random.default_rng(seed)
+    scores = []
+    for _ in range(n_bootstrap):
+        sampled = rng.choice(unique_groups, size=len(unique_groups), replace=True)
+        idx = np.concatenate([indices_by_group[g] for g in sampled])
+        scores.append(float(f1_score(
+            y_true[idx], y_pred[idx], labels=labels, average="macro", zero_division=0
+        )))
+    return {
+        "method": "percentile bootstrap resampling whole test dialogues",
+        "unit": "dialogue",
+        "n_bootstrap": n_bootstrap,
+        "seed": seed,
+        "confidence_level": 0.95,
+        "lower_95": round(float(np.quantile(scores, 0.025)), 4),
+        "upper_95": round(float(np.quantile(scores, 0.975)), 4),
+    }
+
+
 def evaluate_meld_models() -> Dict[str, Any]:
-    """Evaluate MELD text-only models without leaking ground-truth labels into features.
+    """Train a reproducible text-only emotion classifier on official MELD train data.
 
-    MELD's checked-in split contains utterance text and labels, but this evaluation
-    path does not load aligned audio features. Acoustic fusion is therefore marked
-    unavailable instead of fabricating pitch/energy values from the true emotion.
+    Model selection is not performed on the test set. TF-IDF features are fitted
+    only on train dialogues; the official test split is evaluated once. Dialogue
+    bootstrap intervals preserve within-dialogue dependence. This remains a
+    scripted-dialogue benchmark, not evidence of call-center generalization.
     """
-    print("\\n" + "=" * 70)
-    print("STEP 2: EVALUATING MELD CONVERSATIONAL EMOTION CLASSIFIER (TEXT ONLY)")
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.dummy import DummyClassifier
+
+    print("\n" + "=" * 70)
+    print("STEP 2: HELD-OUT MELD EMOTION EVALUATION (TF-IDF + LOGISTIC REGRESSION)")
     print("=" * 70)
+    train_dialogues = _load_meld_dialogues(DATA_MELD_DIR / "meld_train_dialogues.json")
+    dev_path = DATA_MELD_DIR / "meld_dev_dialogues.json"
+    test_dialogues = _load_meld_dialogues(DATA_MELD_DIR / "meld_test_dialogues.json")
+    train_text, y_train, _ = _flatten_meld_dialogues(train_dialogues)
+    test_text, y_test, test_groups = _flatten_meld_dialogues(test_dialogues)
+    if not train_text or not test_text:
+        raise ValueError("MELD train and test splits must contain labelled non-empty utterances.")
 
-    classifier = MeldClassifier()
-    if not classifier.is_ready:
-        print("[!] MELD classifier models not loaded. Skipping live MELD benchmark.")
-        return {}
+    labels = sorted(set(y_train.tolist()) | set(y_test.tolist()))
+    # No dialogue IDs overlap across official splits.
+    overlap = set(train_dialogues) & set(test_dialogues)
+    if overlap:
+        raise ValueError(f"Train/test dialogue leakage detected: {len(overlap)} shared IDs")
+    if dev_path.exists():
+        dev_dialogues = _load_meld_dialogues(dev_path)
+        dev_overlap = (set(train_dialogues) & set(dev_dialogues)) | (set(test_dialogues) & set(dev_dialogues))
+        if dev_overlap:
+            raise ValueError(f"Dialogue leakage across official splits: {len(dev_overlap)} shared IDs")
 
-    test_file = DATA_MELD_DIR / "meld_test_dialogues.json"
-    if not test_file.exists():
-        print(f"[!] Test split not found at {test_file}")
-        return {}
+    vectorizer = TfidfVectorizer(
+        lowercase=True, strip_accents="unicode", ngram_range=(1, 2),
+        min_df=2, max_features=150_000, sublinear_tf=True,
+    )
+    x_train = vectorizer.fit_transform(train_text)
+    x_test = vectorizer.transform(test_text)
 
-    with open(test_file, "r", encoding="utf-8") as f:
-        dialogues = json.load(f)
+    model = LogisticRegression(
+        max_iter=2000, class_weight="balanced", C=2.0,
+        solver="lbfgs", random_state=42,
+    )
+    model.fit(x_train, y_train)
+    y_pred = model.predict(x_test)
 
-    y_true_emotion, y_pred_emotion = [], []
-    y_true_sentiment, y_pred_sentiment = [], []
-    for _, turns in dialogues.items():
-        for turn in sorted(turns, key=lambda x: x.get("utterance_id", 0)):
-            text = turn.get("utterance", "").strip()
-            if not text:
-                continue
-            true_emo = turn.get("emotion", "neutral").lower()
-            true_sent = turn.get("sentiment", "neutral").lower()
-            prediction = classifier.predict_turn(
-                utterance=text,
-                speaker=turn.get("speaker", "Other"),
-            )
-            y_true_emotion.append(true_emo)
-            y_pred_emotion.append(prediction["emotion"]["label"].lower())
-            y_true_sentiment.append(true_sent)
-            y_pred_sentiment.append(prediction["sentiment"]["label"].lower())
-
-    if not y_true_emotion:
-        raise ValueError(f"No non-empty utterances found in {test_file}")
-
-    emo_labels = sorted(set(y_true_emotion))
-    sent_labels = sorted(set(y_true_sentiment))
-    emo_counts = pd.Series(y_true_emotion).value_counts().to_dict()
-    majority_emo = max(emo_counts, key=emo_counts.get)
-    majority_acc = float(emo_counts[majority_emo] / len(y_true_emotion))
-
-    emo_acc = float(accuracy_score(y_true_emotion, y_pred_emotion))
-    emo_macro_f1 = float(f1_score(y_true_emotion, y_pred_emotion, average="macro", zero_division=0))
-    emo_weighted_f1 = float(f1_score(y_true_emotion, y_pred_emotion, average="weighted", zero_division=0))
-    sent_acc = float(accuracy_score(y_true_sentiment, y_pred_sentiment))
-    sent_macro_f1 = float(f1_score(y_true_sentiment, y_pred_sentiment, average="macro", zero_division=0))
-    sent_weighted_f1 = float(f1_score(y_true_sentiment, y_pred_sentiment, average="weighted", zero_division=0))
-
-    emotion_text_only = {
-        "accuracy": round(emo_acc, 4),
-        "macro_f1": round(emo_macro_f1, 4),
-        "weighted_f1": round(emo_weighted_f1, 4),
-    }
-    sentiment_text_only = {
-        "accuracy": round(sent_acc, 4),
-        "macro_f1": round(sent_macro_f1, 4),
-        "weighted_f1": round(sent_weighted_f1, 4),
-    }
-    unavailable_fusion = {
-        "available": False,
-        "reason": "No aligned audio features are loaded for MELD evaluation. Synthetic acoustic values derived from the true emotion label are intentionally not used.",
-    }
-    print(f"[MELD] Text-only emotion accuracy={emo_acc:.4f}, macro-F1={emo_macro_f1:.4f}; majority baseline={majority_acc:.4f}")
-    print(f"[MELD] Text-only sentiment accuracy={sent_acc:.4f}, macro-F1={sent_macro_f1:.4f}")
+    # A true majority-class classifier is the accuracy baseline. Its macro-F1
+    # is also reported because accuracy alone hides minority-class failures.
+    dummy = DummyClassifier(strategy="most_frequent")
+    dummy.fit(np.zeros((len(y_train), 1)), y_train)
+    majority_pred = dummy.predict(np.zeros((len(y_test), 1)))
+    majority_class = str(dummy.classes_[np.argmax(dummy.class_prior_)])
+    majority_accuracy = float(accuracy_score(y_test, majority_pred))
+    model_accuracy = float(accuracy_score(y_test, y_pred))
+    model_macro_f1 = float(f1_score(y_test, y_pred, labels=labels, average="macro", zero_division=0))
+    baseline_macro_f1 = float(f1_score(y_test, majority_pred, labels=labels, average="macro", zero_division=0))
+    report = classification_report(
+        y_test, y_pred, labels=labels, output_dict=True, zero_division=0
+    )
+    baseline_report = classification_report(
+        y_test, majority_pred, labels=labels, output_dict=True, zero_division=0
+    )
+    uncertainty = _bootstrap_dialogue_macro_f1(y_test, y_pred, test_groups, labels)
+    baseline_uncertainty = _bootstrap_dialogue_macro_f1(
+        y_test, majority_pred, test_groups, labels, seed=2027
+    )
+    class_counts = pd.Series(y_test).value_counts().to_dict()
+    baseline_beaten = model_macro_f1 > baseline_macro_f1
+    print(f"[MELD] TF-IDF+LogReg accuracy={model_accuracy:.4f}; macro-F1={model_macro_f1:.4f} "
+          f"(95% dialogue-bootstrap CI {uncertainty['lower_95']:.4f}-{uncertainty['upper_95']:.4f})")
+    print(f"[MELD] Majority accuracy={majority_accuracy:.4f}; macro-F1={baseline_macro_f1:.4f}; "
+          f"macro-F1 baseline beaten={baseline_beaten}")
 
     return {
-        "evaluation_mode": "text_only_no_label_derived_acoustic_features",
+        "evaluation_mode": "official_meld_train_test_dialogue_split_text_only",
+        "dataset": "MELD (scripted TV dialogue emotion dataset)",
+        "model": {
+            "name": "TF-IDF word unigram/bigram + class-weighted LogisticRegression",
+            "feature_fit_split": "official train only",
+            "training_utterances": len(train_text),
+            "training_dialogues": len(train_dialogues),
+            "test_utterances": len(test_text),
+            "test_dialogues": len(test_dialogues),
+            "random_state": 42,
+        },
         "dataset_split": {
-            "test_turns": len(y_true_emotion),
-            "test_dialogues": len(dialogues),
+            "test_turns": len(y_test),
+            "test_dialogues": len(test_dialogues),
             "class_imbalance": {
-                k: {"count": int(v), "percentage": round(v / len(y_true_emotion) * 100, 2)}
-                for k, v in emo_counts.items()
+                label: {"count": int(class_counts.get(label, 0)),
+                        "percentage": round(class_counts.get(label, 0) / len(y_test) * 100, 2)}
+                for label in labels
             },
         },
         "emotion_evaluation": {
-            "majority_baseline_accuracy": round(majority_acc, 4),
-            "majority_baseline_class": majority_emo,
-            "lexical_text_only": emotion_text_only,
-            "multimodal_acoustic_fused": unavailable_fusion,
-            "accuracy": emotion_text_only["accuracy"],
-            "macro_f1": emotion_text_only["macro_f1"],
-            "weighted_f1": emotion_text_only["weighted_f1"],
-            "classification_report": classification_report(
-                y_true_emotion, y_pred_emotion, labels=emo_labels, output_dict=True, zero_division=0
-            ),
+            "majority_baseline_class": majority_class,
+            "majority_baseline_accuracy": round(majority_accuracy, 4),
+            "majority_baseline_macro_f1": round(baseline_macro_f1, 4),
+            "accuracy": round(model_accuracy, 4),
+            "macro_f1": round(model_macro_f1, 4),
+            "weighted_f1": round(float(f1_score(y_test, y_pred, average="weighted", zero_division=0)), 4),
+            "macro_f1_lift_over_majority": round(model_macro_f1 - baseline_macro_f1, 4),
+            "beats_majority_macro_f1": baseline_beaten,
+            "macro_f1_uncertainty": uncertainty,
+            "majority_macro_f1_uncertainty": baseline_uncertainty,
+            "per_class": {
+                label: {
+                    "support": int(report[label]["support"]),
+                    "precision": round(float(report[label]["precision"]), 4),
+                    "recall": round(float(report[label]["recall"]), 4),
+                    "f1": round(float(report[label]["f1-score"]), 4),
+                    "majority_baseline_f1": round(float(baseline_report[label]["f1-score"]), 4),
+                }
+                for label in labels
+            },
+            "classification_report": report,
             "confusion_matrix": {
-                "labels": emo_labels,
-                "matrix": confusion_matrix(y_true_emotion, y_pred_emotion, labels=emo_labels).tolist(),
+                "labels": labels,
+                "matrix": confusion_matrix(y_test, y_pred, labels=labels).tolist(),
+            },
+            "multimodal_acoustic_fused": {
+                "available": False,
+                "reason": "No independently extracted and aligned audio features are used in this text-only experiment.",
             },
         },
         "sentiment_evaluation": {
-            "lexical_text_only": sentiment_text_only,
-            "multimodal_acoustic_fused": unavailable_fusion,
-            "accuracy": sentiment_text_only["accuracy"],
-            "macro_f1": sentiment_text_only["macro_f1"],
-            "weighted_f1": sentiment_text_only["weighted_f1"],
-            "classification_report": classification_report(
-                y_true_sentiment, y_pred_sentiment, labels=sent_labels, output_dict=True, zero_division=0
-            ),
+            "available": False,
+            "reason": "This focused evaluation targets the 7-class emotion task; sentiment is not inferred from emotion labels.",
         },
+        "scope_limitations": [
+            "MELD contains scripted television dialogue, not real call-center telephony.",
+            "Dialogue-level bootstrap confidence intervals describe uncertainty on MELD test dialogues only.",
+            "No acoustic fusion or real-call performance claim is made.",
+        ],
     }
-
 
 def generate_markdown_report(churn_eval: Dict[str, Any], meld_eval: Dict[str, Any], out_path: Path):
     """Generates a comprehensive executive ML Evaluation Markdown Report."""
