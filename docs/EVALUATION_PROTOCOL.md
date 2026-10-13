@@ -15,6 +15,7 @@ The quality workflow uploads the generated JSON and Markdown reports and writes 
 ## 3. Independently annotated speech test set
 
 No independent human-annotated real-call audio is currently included. Therefore this repository must not claim real-world WER or DER. To create a valid evaluation set, obtain consented and de-identified calls, freeze call-level test membership before tuning, and have annotators who do not see model predictions independently create:
+
 - exact reference transcripts, with a documented normalization policy;
 - speaker-turn start/end times and speaker IDs in RTTM;
 - annotation adjudication notes and call metadata (noise, codec, accent, overlap).
