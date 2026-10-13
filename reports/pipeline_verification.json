@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-10-13T07:18:16Z",
+  "timestamp": "2026-10-13T07:28:05Z",
   "calls_evaluated": 2,
   "stage_timings_ms": {
-    "model_initialization": 435.98
+    "model_initialization": 735.36
   },
   "pipeline_stages": {},
   "call_results": [
@@ -13,12 +13,12 @@
       "primary_intent": "pricing_objection",
       "overall_sentiment": "mixed",
       "churn_score": 0.99,
-      "churn_level": "CRITICAL",
+      "churn_level": "SeverityLevel.CRITICAL",
       "timings_ms": {
-        "asr": 3944.04,
-        "emotion": 14.91,
-        "churn": 23.61,
-        "agents": 2.01
+        "asr": 4448.91,
+        "emotion": 23.9,
+        "churn": 56.2,
+        "agents": 2.0
       },
       "evidence_audit": {
         "total_findings": 5,
@@ -35,12 +35,12 @@
       "primary_intent": "general_inquiry",
       "overall_sentiment": "mixed",
       "churn_score": 0.5644,
-      "churn_level": "ELEVATED",
+      "churn_level": "SeverityLevel.ELEVATED",
       "timings_ms": {
-        "asr": 2903.1,
-        "emotion": 31.74,
-        "churn": 18.57,
-        "agents": 0.0
+        "asr": 2997.31,
+        "emotion": 21.23,
+        "churn": 21.87,
+        "agents": 2.15
       },
       "evidence_audit": {
         "total_findings": 3,
@@ -52,7 +52,7 @@
     }
   ],
   "overall_status": "PASSED",
-  "total_execution_seconds": 7.38,
+  "total_execution_seconds": 8.31,
   "aggregate_audit": {
     "total_findings": 8,
     "supported_count": 8,

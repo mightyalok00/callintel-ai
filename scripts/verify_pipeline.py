@@ -12,7 +12,7 @@ import sys
 import json
 import time
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, TypedDict
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -27,7 +27,17 @@ from src.callintel.agents.evidence_validator import EvidenceValidator, EvidenceS
 REPORTS_DIR = PROJECT_ROOT / "reports"
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-FIXTURES = [
+
+class FixtureConfig(TypedDict):
+    call_id: str
+    audio_path: Path
+    customer_profile: Dict[str, Any]
+    pricing_objection: bool
+    cancellation_warning: bool
+    expected_intent: str
+
+
+FIXTURES: List[FixtureConfig] = [
     {
         "call_id": "VERIFY_CALL_001_CHURN_RISK",
         "audio_path": PROJECT_ROOT / "data" / "samples" / "sample_customer_call.wav",
@@ -77,7 +87,7 @@ def verify_end_to_end_pipeline() -> Dict[str, Any]:
     print("=" * 70)
 
     start_total = time.time()
-    results = {
+    results: Dict[str, Any] = {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "calls_evaluated": len(FIXTURES),
         "stage_timings_ms": {},
@@ -101,8 +111,9 @@ def verify_end_to_end_pipeline() -> Dict[str, Any]:
     refuted_or_abstain_count = 0
 
     for fix in FIXTURES:
-        call_id = fix["call_id"]
-        audio_path = fix["audio_path"]
+        call_id: str = fix["call_id"]
+        audio_path: Path = fix["audio_path"]
+        profile: Dict[str, Any] = fix["customer_profile"]
         print(f"\n---> Evaluating Call: {call_id} ({audio_path.name})")
 
         # Stage 1: Audio Check
@@ -144,7 +155,7 @@ def verify_end_to_end_pipeline() -> Dict[str, Any]:
             "has_cancellation_warning": fix.get("cancellation_warning", False),
             "unresolved_issues_count": 1 if "TECH" in call_id else 0,
         }
-        churn_res = churn_pred.predict_churn(fix["customer_profile"], call_signals)
+        churn_res = churn_pred.predict_churn(profile, call_signals)
         churn_duration_ms = round((time.time() - t_churn) * 1000, 2)
         base_prob = churn_res["account_baseline_churn_probability"]
         comp_risk = churn_res["in_call_operational_modifier"]["composite_risk_score"]
@@ -173,14 +184,19 @@ def verify_end_to_end_pipeline() -> Dict[str, Any]:
         grounded_findings_count += audit_stats["supported_count"]
         refuted_or_abstain_count += audit_stats["insufficient_count"] + audit_stats["contradicted_count"]
 
+        churn_score_val = (
+            round(insight_report.churn_risk_score, 4)
+            if insight_report.churn_risk_score is not None
+            else 0.0
+        )
         call_record = {
             "call_id": call_id,
             "audio_size_kb": file_size_kb,
             "num_turns": len(turns),
             "primary_intent": insight_report.primary_intent,
             "overall_sentiment": insight_report.overall_sentiment,
-            "churn_score": round(insight_report.churn_risk_score, 4),
-            "churn_level": insight_report.churn_risk_level,
+            "churn_score": churn_score_val,
+            "churn_level": str(insight_report.churn_risk_level),
             "timings_ms": {
                 "asr": asr_duration_ms,
                 "emotion": meld_duration_ms,

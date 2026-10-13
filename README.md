@@ -21,7 +21,7 @@ Open the [CallIntel AI dashboard](https://callintel-ai.streamlit.app/) to explor
 
 ![Illustrative CallIntel AI dashboard preview](docs/images/callintel-dashboard-preview.svg)
 
-<sub>This is an illustrative dashboard preview, not a screenshot captured from the deployed application. Open the live demo above to see the running interface.</sub>
+*This is an illustrative dashboard preview, not a screenshot captured from the deployed application. Open the live demo above to see the running interface.*
 
 ---
 
