@@ -265,7 +265,6 @@ def evaluate_churn_models() -> Dict[str, Any]:
         f_pred = (f_probs >= 0.50).astype(int)
 
         cv_rocs.append(float(roc_auc_score(y_cv.iloc[val_i], f_probs)))
-        f_pr, f_rec, _ = precision_recall_curve(y_cv.iloc[val_i], f_probs)
         cv_pr_aucs.append(float(average_precision_score(y_cv.iloc[val_i], f_probs)))
         cv_briers.append(float(brier_score_loss(y_cv.iloc[val_i], f_probs)))
         cv_f1s.append(float(f1_score(y_cv.iloc[val_i], f_pred)))
