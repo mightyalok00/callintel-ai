@@ -4,11 +4,12 @@
   "acoustic_features": "34-dim (F0 pitch, 13 MFCC means/stds, centroid, rolloff, RMS)",
   "summary": {
     "mean_wer": 0.0103,
-    "mean_der": 0.0,
+    "mean_der": null,
     "mean_rtf": 0.09,
     "mean_peak_memory_mb": 56.44,
     "total_calls_benchmarked": 4,
-    "speaker_discovery_accuracy": 0.5
+    "speaker_discovery_accuracy": 0.5,
+    "mean_speaker_attribution_error_rate": null
   },
   "calls": [
     {
@@ -26,24 +27,17 @@
         "insertions": 0,
         "ref_words": 100
       },
-      "der": 0.0,
+      "der": null,
       "der_details": {
-        "der": 0.0,
-        "speaker_error_rate": 0.0,
-        "missed_speech_rate": 0.0,
-        "false_alarm_rate": 0.0,
-        "total_speech_seconds": 39.12,
-        "speaker_error_seconds": 0.0,
-        "mapped_speakers": {
-          "Customer": "Customer",
-          "Agent": "Agent"
-        },
-        "collar_seconds": 0.25
+        "der": null,
+        "metric_kind": "not_computable_reference_timestamps_missing",
+        "note": "Historical artifact does not contain enough reference timing information to compute DER. Re-run training/benchmark_speech.py to generate the text-aligned proxy."
       },
       "detected_turns": 9,
       "reference_turns": 6,
       "expected_speakers": 2,
-      "discovered_speakers_k": 2
+      "discovered_speakers_k": 2,
+      "speaker_attribution_error_rate": null
     },
     {
       "call_id": "CALL_2026_SALES_002",
@@ -53,31 +47,24 @@
       "processing_time_seconds": 3.57,
       "real_time_factor_rtf": 0.072,
       "peak_memory_mb": 57.82,
-      "wer": 0.0,
+      "wer": 0,
       "wer_breakdown": {
         "substitutions": 0,
         "deletions": 0,
         "insertions": 0,
         "ref_words": 100
       },
-      "der": 0.0,
+      "der": null,
       "der_details": {
-        "der": 0.0,
-        "speaker_error_rate": 0.0,
-        "missed_speech_rate": 0.0,
-        "false_alarm_rate": 0.0,
-        "total_speech_seconds": 40.24,
-        "speaker_error_seconds": 0.0,
-        "mapped_speakers": {
-          "Agent": "Agent",
-          "Customer": "Customer"
-        },
-        "collar_seconds": 0.25
+        "der": null,
+        "metric_kind": "not_computable_reference_timestamps_missing",
+        "note": "Historical artifact does not contain enough reference timing information to compute DER. Re-run training/benchmark_speech.py to generate the text-aligned proxy."
       },
       "detected_turns": 13,
       "reference_turns": 6,
       "expected_speakers": 2,
-      "discovered_speakers_k": 3
+      "discovered_speakers_k": 3,
+      "speaker_attribution_error_rate": null
     },
     {
       "call_id": "CALL_2026_TECH_003",
@@ -94,24 +81,17 @@
         "insertions": 0,
         "ref_words": 95
       },
-      "der": 0.0,
+      "der": null,
       "der_details": {
-        "der": 0.0,
-        "speaker_error_rate": 0.0,
-        "missed_speech_rate": 0.0,
-        "false_alarm_rate": 0.0,
-        "total_speech_seconds": 37.44,
-        "speaker_error_seconds": 0.0,
-        "mapped_speakers": {
-          "Customer": "Customer",
-          "Agent": "Agent"
-        },
-        "collar_seconds": 0.25
+        "der": null,
+        "metric_kind": "not_computable_reference_timestamps_missing",
+        "note": "Historical artifact does not contain enough reference timing information to compute DER. Re-run training/benchmark_speech.py to generate the text-aligned proxy."
       },
       "detected_turns": 8,
       "reference_turns": 6,
       "expected_speakers": 2,
-      "discovered_speakers_k": 3
+      "discovered_speakers_k": 3,
+      "speaker_attribution_error_rate": null
     },
     {
       "call_id": "CALL_2026_NOISE_STRESS",
@@ -128,24 +108,17 @@
         "insertions": 0,
         "ref_words": 100
       },
-      "der": 0.0,
+      "der": null,
       "der_details": {
-        "der": 0.0,
-        "speaker_error_rate": 0.0,
-        "missed_speech_rate": 0.0,
-        "false_alarm_rate": 0.0,
-        "total_speech_seconds": 38.88,
-        "speaker_error_seconds": 0.0,
-        "mapped_speakers": {
-          "Customer": "Customer",
-          "Agent": "Agent"
-        },
-        "collar_seconds": 0.25
+        "der": null,
+        "metric_kind": "not_computable_reference_timestamps_missing",
+        "note": "Historical artifact does not contain enough reference timing information to compute DER. Re-run training/benchmark_speech.py to generate the text-aligned proxy."
       },
       "detected_turns": 9,
       "reference_turns": 6,
       "expected_speakers": 2,
-      "discovered_speakers_k": 2
+      "discovered_speakers_k": 2,
+      "speaker_attribution_error_rate": null
     }
   ]
 }

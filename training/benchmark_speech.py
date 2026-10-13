@@ -1,7 +1,7 @@
 """
 Speech Processing Benchmark Suite.
 Evaluates:
-1. Diarization Error Rate (DER) with standard 0.25s collar, False Alarm, Missed Speech, and Speaker Confusion.
+1. Text-aligned speaker-attribution diagnostic (not DER; reference timestamps are unavailable).
 2. Word Error Rate (WER) using Levenshtein distance on normalized reference vs hypothesis word sequences.
 3. Acoustic conditions: Clean audio, synthetic additive noise stress test (+15dB, +5dB SNR), short utterance handling.
 4. Latency profiling: Real-Time Factor (RTF) and Peak Memory (tracemalloc).
@@ -200,86 +200,74 @@ def compute_der(
     hyp_turns: List[Dict[str, Any]],
     collar_seconds: float = 0.25,
 ) -> Dict[str, Any]:
-    """
-    Computes duration-weighted Diarization Error Rate (DER) according to NIST RT evaluation standards:
-    - Ground truth speaker assigned to each hypothesis turn via text token matching
-    - Forgiveness collar (0.25s) applied to turn boundaries
-    - Optimal 1-to-1 mapping from hypothesis cluster labels to reference speaker labels
-    - Calculates Speaker Error Duration / Total Speech Duration
-    """
-    if not ref_turns or not hyp_turns:
-        return {"der": 1.0, "speaker_error_rate": 1.0, "missed_speech_rate": 0.0, "false_alarm_rate": 0.0, "collar_seconds": collar_seconds}
+    """Compute a text-aligned speaker-attribution diagnostic, NOT DER.
 
-    # Step 1: Align each hyp_turn to the best matching ref_turn using token overlap
-    aligned_hyp_turns = []
+    Reference turns contain text and speaker labels but no reference timestamps.
+    Therefore true DER (missed speech, false alarms, speaker confusion and collar)
+    cannot be computed. This duration-weighted proxy is diagnostic only.
+    """
+    metric_kind = "text_aligned_speaker_attribution_proxy_not_DER"
+    if not ref_turns or not hyp_turns:
+        return {
+            "der": None,
+            "speaker_attribution_error_rate": 1.0,
+            "speaker_error_rate": 1.0,
+            "metric_kind": metric_kind,
+            "note": "Reference turns lack timestamps; DER cannot be computed.",
+            "collar_seconds": collar_seconds,
+        }
+
+    aligned = []
     for hyp in hyp_turns:
         hyp_tokens = set(normalize_words(hyp.get("utterance", "")))
-        best_ref = None
-        best_overlap = -1
+        best_ref, best_overlap = None, 0
         for ref in ref_turns:
-            ref_tokens = set(normalize_words(ref.get("text", "")))
-            overlap = len(hyp_tokens & ref_tokens)
+            overlap = len(hyp_tokens & set(normalize_words(ref.get("text", ""))))
             if overlap > best_overlap:
-                best_overlap = overlap
-                best_ref = ref
-
-        ref_speaker = best_ref["speaker"] if best_ref else "Unknown"
-        aligned_hyp_turns.append({
+                best_overlap, best_ref = overlap, ref
+        aligned.append({
             "hyp_speaker": hyp.get("speaker", "Unknown"),
-            "ref_speaker": ref_speaker,
-            "duration": max(0.1, float(hyp.get("end_seconds", 0)) - float(hyp.get("start_seconds", 0))),
-            "start": float(hyp.get("start_seconds", 0)),
-            "end": float(hyp.get("end_seconds", 0)),
+            "ref_speaker": best_ref.get("speaker", "Unknown") if best_ref else "Unknown",
+            "duration": max(0.0, float(hyp.get("end_seconds", 0.0)) - float(hyp.get("start_seconds", 0.0))),
+            "overlap_tokens": best_overlap,
         })
 
-    # Step 2: Determine optimal 1-to-1 speaker mapping
-    hyp_speakers = list({a["hyp_speaker"] for a in aligned_hyp_turns})
-    ref_speakers = list({a["ref_speaker"] for a in aligned_hyp_turns if a["ref_speaker"] != "Unknown"})
-
+    hyp_speakers = sorted({row["hyp_speaker"] for row in aligned})
+    ref_speakers = sorted({row["ref_speaker"] for row in aligned if row["ref_speaker"] != "Unknown"})
     co_occurrence = {hs: {rs: 0.0 for rs in ref_speakers} for hs in hyp_speakers}
-    for a in aligned_hyp_turns:
-        if a["ref_speaker"] in ref_speakers:
-            co_occurrence[a["hyp_speaker"]][a["ref_speaker"]] += a["duration"]
+    for row in aligned:
+        if row["ref_speaker"] in ref_speakers and row["overlap_tokens"] > 0:
+            co_occurrence[row["hyp_speaker"]][row["ref_speaker"]] += row["duration"] * row["overlap_tokens"]
 
-    speaker_map = {}
-    assigned_refs = set()
+    speaker_map, assigned_refs = {}, set()
     for hs in sorted(hyp_speakers, key=lambda h: max(co_occurrence[h].values()) if co_occurrence[h] else 0, reverse=True):
         candidates = sorted(
-            [(rs, co_occurrence[hs][rs]) for rs in ref_speakers if rs not in assigned_refs],
-            key=lambda x: x[1],
-            reverse=True,
+            ((rs, co_occurrence[hs][rs]) for rs in ref_speakers if rs not in assigned_refs),
+            key=lambda item: item[1], reverse=True,
         )
-        if candidates:
-            best_rs, _ = candidates[0]
-            speaker_map[hs] = best_rs
-            assigned_refs.add(best_rs)
+        if candidates and candidates[0][1] > 0:
+            speaker_map[hs] = candidates[0][0]
+            assigned_refs.add(candidates[0][0])
         else:
             speaker_map[hs] = "Unmapped"
 
-    # Step 3: Compute Collar-discounted duration error
-    total_speech_duration = sum(a["duration"] for a in aligned_hyp_turns)
-    speaker_error_duration = 0.0
-
-    for a in aligned_hyp_turns:
-        mapped_speaker = speaker_map.get(a["hyp_speaker"], a["hyp_speaker"])
-        if mapped_speaker != a["ref_speaker"]:
-            # Apply forgiveness collar (subtract 2 * collar_seconds per transition turn)
-            effective_duration = max(0.0, a["duration"] - (2.0 * collar_seconds))
-            speaker_error_duration += effective_duration
-
-    der = round(speaker_error_duration / max(0.001, total_speech_duration), 4)
-
+    total_duration = sum(row["duration"] for row in aligned)
+    error_duration = sum(
+        row["duration"] for row in aligned
+        if row["overlap_tokens"] == 0 or speaker_map.get(row["hyp_speaker"], "Unmapped") != row["ref_speaker"]
+    )
+    proxy_error = round(error_duration / total_duration, 4) if total_duration > 0 else 1.0
     return {
-        "der": der,
-        "speaker_error_rate": der,
-        "missed_speech_rate": 0.0,
-        "false_alarm_rate": 0.0,
-        "total_speech_seconds": round(total_speech_duration, 2),
-        "speaker_error_seconds": round(speaker_error_duration, 2),
+        "der": None,
+        "speaker_attribution_error_rate": proxy_error,
+        "speaker_error_rate": proxy_error,
+        "metric_kind": metric_kind,
+        "note": "Not DER: reference turns have no time boundaries; missed speech, false alarms, and collars are not scored.",
+        "total_hypothesis_duration_seconds": round(total_duration, 2),
+        "speaker_error_seconds": round(error_duration, 2),
         "mapped_speakers": speaker_map,
         "collar_seconds": collar_seconds,
     }
-
 
 def run_benchmark():
     print("=" * 65)
@@ -317,7 +305,7 @@ def run_benchmark():
         hyp_text = asr_result["full_transcript"]
         wer, wer_details = compute_wer(call_info["reference_text"], hyp_text)
 
-        # 2. Evaluate DER
+        # 2. Evaluate text-aligned speaker attribution proxy (not DER)
         der_metrics = compute_der(call_info["turns"], asr_result["turns"])
 
         # 3. Evaluate Automatic Speaker Discovery (k* estimation without prior)
@@ -349,7 +337,8 @@ def run_benchmark():
             "peak_memory_mb": peak_mb,
             "wer": wer,
             "wer_breakdown": wer_details,
-            "der": der_metrics["der"],
+            "der": None,
+            "speaker_attribution_error_rate": der_metrics["speaker_attribution_error_rate"],
             "der_details": der_metrics,
             "detected_turns": len(asr_result["turns"]),
             "reference_turns": len(call_info["turns"]),
@@ -359,13 +348,17 @@ def run_benchmark():
         benchmark_results.append(result)
 
         print(f"    -> WER: {wer * 100:.1f}% (Sub: {wer_details['substitutions']}, Del: {wer_details['deletions']}, Ins: {wer_details['insertions']})")
-        print(f"    -> DER: {der_metrics['der'] * 100:.1f}% (SpkErr: {der_metrics['speaker_error_rate'] * 100:.1f}%, Collar: {der_metrics['collar_seconds']}s)")
+        print(f"    -> Speaker attribution proxy (NOT DER): {der_metrics['speaker_attribution_error_rate'] * 100:.1f}%")
         print(f"    -> Speaker Count Discovery: k*={discovered_k} (Ground Truth: 2)")
         print(f"    -> Latency: {elapsed:.2f}s (RTF: {rtf}x, Peak Mem: {peak_mb} MB)")
 
+    # Fail clearly rather than writing NaN metrics when fixtures are missing.
+    if not benchmark_results:
+        raise RuntimeError(f"No speech fixtures were benchmarked. Expected WAV files in {SAMPLES_DIR.resolve()}")
+
     # Compute aggregate statistics
     avg_wer = round(float(np.mean([r["wer"] for r in benchmark_results])), 4)
-    avg_der = round(float(np.mean([r["der"] for r in benchmark_results])), 4)
+    avg_speaker_attribution_error = round(float(np.mean([r["speaker_attribution_error_rate"] for r in benchmark_results])), 4) if benchmark_results else None
     avg_rtf = round(float(np.mean([r["real_time_factor_rtf"] for r in benchmark_results])), 3)
     avg_peak_mem = round(float(np.mean([r["peak_memory_mb"] for r in benchmark_results])), 2)
 
@@ -375,7 +368,8 @@ def run_benchmark():
         "acoustic_features": "34-dim (F0 pitch, 13 MFCC means/stds, centroid, rolloff, RMS)",
         "summary": {
             "mean_wer": avg_wer,
-            "mean_der": avg_der,
+            "mean_der": None,
+            "mean_speaker_attribution_error_rate": avg_speaker_attribution_error,
             "mean_rtf": avg_rtf,
             "mean_peak_memory_mb": avg_peak_mem,
             "total_calls_benchmarked": len(benchmark_results),
@@ -403,33 +397,26 @@ Diarizer: `AcousticDiarizer (34-dim acoustic vector: F0 pitch, 13 MFCC means & s
 
 | Metric | Measured Value | Industry Target | Status |
 | :--- | :--- | :--- | :--- |
-| **Mean Word Error Rate (WER)** | **{avg_wer * 100:.2f}%** | < 15.0% | **PASSED (Multi-Scenario Tested)** |
-| **Mean Diarization Error Rate (DER)** | **{avg_der * 100:.2f}%** | < 25.0% | **PASSED (Collar $\\pm 0.25$s)** |
-| **Speaker Count Discovery ($k^*$)** | **{summary_data['summary']['speaker_discovery_accuracy'] * 100:.1f}%** | > 85.0% | **PASSED (Cosine Silhouette)** |
-| **Real-Time Factor (RTF)** | **{avg_rtf}x** | < 1.0x (faster than real-time) | **PASSED (High Throughput)** |
-| **Peak Memory Footprint** | **{avg_peak_mem} MB** | < 1,024 MB | **PASSED (Edge/CPU Deployable)** |
+| **Mean Word Error Rate (WER)** | **{avg_wer * 100:.2f}%** | < 15.0% | **Controlled-fixture result only** |
+| **Speaker attribution proxy (not DER)** | **{avg_speaker_attribution_error * 100:.2f}%** | Diagnostic only | **Not a DER score** |
+| **Speaker Count Discovery ($k^*$)** | **{summary_data['summary']['speaker_discovery_accuracy'] * 100:.1f}%** | > 85.0% | **Below target if discovery accuracy is under 85%** |
+| **Real-Time Factor (RTF)** | **{avg_rtf}x** | < 1.0x (faster than real-time) | **Measured on this environment** |
+| **Peak Memory Footprint** | **{avg_peak_mem} MB** | < 1,024 MB | **Measured on this environment** |
 
 > [!NOTE]
 > **Controlled Benchmark Fixture vs In-the-Wild Telephony**:
-> On clean multi-speaker synthetic test fixtures with distinct speaker timbres, acoustic clustering achieves $< 1.0\\%$ WER and low DER. Under additive background noise ($+15$dB SNR) and fast technical speech exchanges, error rates rise realistically to reflect acoustic degradation.
-> In unconstrained, low-bitrate real-world telephony (e.g. 8kHz G.711 PSTN with overlapping speech and packet jitter), lightweight acoustic clustering DER typically ranges between $8\\%$ and $20\\%$. The `AcousticDiarizer` serves as an efficient edge CPU feature-clustering solution, with downstream Evidence Ledger validation gates enforcing verification before production escalation.
+ > Controlled fixtures can be useful for regression checks, but they do not establish real-world telephony performance. DER is not measured because reference turns have no timestamps.
+ > Do not compare the text-overlap speaker-attribution proxy with published DER targets.
 
 ---
 
-## 2. Diarization Error Rate (DER) Evaluation Methodology
+## 2. Diarization metric limitation
 
-DER is evaluated using standard NIST RT-09 scoring rules:
-1. **Collar Tolerance**: $\\pm 0.250$s forgiveness window placed at speaker transition boundaries to accommodate acoustic pause overlaps.
-2. **Formula**:
-   $$\\text{{DER}} = \\frac{{\\text{{Missed Speech}} + \\text{{False Alarm}} + \\text{{Speaker Confusion}}}}{{\\text{{Total Reference Speech Duration}}}}$$
-3. **Speaker Mapping**: Optimal Hungarian 1-to-1 mapping matching acoustic cluster labels to ground truth speakers (`Agent`, `Customer`).
-4. **Automatic Speaker Count Discovery ($k^*$)**: When speaker count is unprovided, Silhouette scoring on Cosine distance across $k \\in [1, 3]$ automatically estimates optimal cluster count.
-
----
+A valid diarization error rate (DER) requires time-aligned reference speech regions and scoring for missed speech, false alarms, speaker confusion, and the selected collar convention. The reference turns in this repository contain text and speaker labels but no reference timestamps. DER is therefore not measured. The script writes `der: null` and reports a separate text-overlap speaker-attribution diagnostic, which is not DER and must not be compared with published DER targets.
 
 ## 3. Detailed Call-Level Benchmark Breakdown
 
-| Call ID | Scenario | Duration | Processing Time | RTF | WER | DER | Discovered $k^*$ | Peak RAM |
+| Call ID | Scenario | Duration | Processing Time | RTF | WER | Speaker-attribution proxy (not DER) | Discovered $k^*$ | Peak RAM |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :---: | :--- |
 """
 
@@ -437,7 +424,7 @@ DER is evaluated using standard NIST RT-09 scoring rules:
         md_content += (
             f"| `{r['call_id']}` | {r['scenario']} | {r['audio_duration_seconds']:.1f}s | "
             f"{r['processing_time_seconds']:.2f}s | {r['real_time_factor_rtf']}x | "
-            f"**{r['wer'] * 100:.1f}%** | **{r['der'] * 100:.1f}%** | `k*={r['discovered_speakers_k']}` | {r['peak_memory_mb']} MB |\n"
+            f"**{r['wer'] * 100:.1f}%** | **{r['speaker_attribution_error_rate'] * 100:.1f}%** | `k*={r['discovered_speakers_k']}` | {r['peak_memory_mb']} MB |\n"
         )
 
     md_content += f"""

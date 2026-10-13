@@ -14,7 +14,7 @@
 | Account-level bank churn | 33,007-row stratified test split from 165,031 account records | XGBoost ROC-AUC **0.8808**, PR-AUC **0.7109**, F1 **0.6331** | Beats the 0.5 ROC-AUC ranking baseline and the churn prevalence of **0.2116** as a PR reference; see the PR-AUC note below |
 | MELD 7-class emotion | 2,610 utterances / 280 dialogues | Accuracy **0.4785**, macro-F1 **0.3334**, weighted-F1 **0.4835** | Accuracy is **below** the neutral-majority baseline of 0.4812; macro-F1 improves the view beyond majority accuracy but minority classes remain weak |
 | MELD 3-class sentiment | Same 2,610 utterance test set | Accuracy **0.5268**, macro-F1 **0.5063**, weighted-F1 **0.5301** | Accuracy is 4.56 percentage points above the 0.4812 majority baseline |
-| Speech transcription / diarization | 4 controlled sample calls | Mean WER **1.03%**, reported DER **0.00%**, mean RTF **0.090x** | Fixture-only result. Automatic speaker-count discovery was correct on only **2 of 4** calls (50%); do not infer real-call performance |
+| Speech transcription / diarization | 4 controlled sample calls | Mean WER **1.03%**, DER **not measured** (reference timestamps are missing), mean RTF **0.090x** | Fixture-only result. DER cannot be calculated from the available untimed reference turns. Speaker-count discovery was correct on only **2 of 4** calls (50%); do not infer real-call performance |
 
 ## 1. Reproduction
 
@@ -88,51 +88,30 @@ The test set contains 2,610 utterances across 280 dialogues. The seven emotion c
 
 ### Overall comparison
 
-| Model | Accuracy | Macro-F1 | Weighted-F1 |
-|---|---:|---:|---:|
-| Neutral-majority baseline | 0.4812 | — | — |
-| Lexical text-only | 0.4372 | 0.3087 | 0.4461 |
-| Acoustic + text fusion | 0.4785 | 0.3334 | 0.4835 |
+| Model | Accuracy | Macro-F1 | Weighted-F1 | Validity |
+|---|---:|---:|---:|---|
+| Neutral-majority baseline | 0.4812 | — | — | Valid baseline |
+| Lexical text-only | 0.4372 | 0.3087 | 0.4461 | Text-only historical result |
+| Acoustic + text fusion | Withdrawn | Withdrawn | Withdrawn | Target leakage: acoustic inputs were synthesized from true emotion labels |
 
-The fused model improves on text-only macro-F1 by **0.0247**, but its accuracy (47.85%) remains slightly below the 48.12% majority baseline. That is a warning against describing the emotion classifier as broadly reliable.
+The previous fused result (47.85% accuracy, 0.3334 macro-F1) is **invalidated**. The old evaluation derived pitch, spectral centroid, voiced ratio, and energy from each utterance's ground-truth emotion label, then fed those values to the multimodal predictor. That leaks the target into the model inputs. The reported fused per-class metrics and confusion matrix are withdrawn for the same reason.
 
-### Fused model per-class report
+The valid text-only result (43.72% accuracy) is below the neutral-majority baseline (48.12%). This is a weak emotion classifier and should not drive consequential decisions. The corrected evaluator now runs text-only predictions and explicitly marks acoustic fusion unavailable until real audio features aligned to the held-out utterances are provided.
 
-| Emotion | Precision | Recall | F1 | Support |
-|---|---:|---:|---:|---:|
-| Anger | 0.3077 | 0.3246 | 0.3159 | 345 |
-| Disgust | 0.1500 | 0.0882 | 0.1111 | 68 |
-| Fear | 0.0725 | 0.1000 | 0.0840 | 50 |
-| Joy | 0.4065 | 0.4378 | 0.4216 | 402 |
-| Neutral | 0.6571 | 0.5812 | 0.6168 | 1,256 |
-| Sadness | 0.3080 | 0.3317 | 0.3194 | 208 |
-| Surprise | 0.4092 | 0.5374 | 0.4646 | 281 |
+### Sentiment
 
-### Confusion and failure patterns
-
-- **Neutral absorbs many non-neutral utterances.** The confusion matrix shows 143 anger, 162 joy, 74 sadness, and 104 surprise examples predicted as neutral. This is consistent with the majority class dominating predictions.
-- **Fear and disgust are not dependable.** Fear F1 is 0.0840 (50 examples) and disgust F1 is 0.1111 (68 examples). Do not use these classes alone to trigger consequential actions.
-- **Acoustic fusion helps modestly, not decisively.** Accuracy improves from 43.72% to 47.85% and macro-F1 from 0.3087 to 0.3334, but the fused model still does not exceed majority-baseline accuracy.
-- **Sentiment remains imperfect.** The positive class has precision 0.3833 and F1 0.4247; positive/negative customer intent should be checked against transcript evidence and not inferred from emotion alone.
-
-### Sentiment per-class report
-
-| Sentiment | Precision | Recall | F1 | Support |
-|---|---:|---:|---:|---:|
-| Negative | 0.5152 | 0.4874 | 0.5009 | 833 |
-| Neutral | 0.6136 | 0.5740 | 0.5932 | 1,256 |
-| Positive | 0.3833 | 0.4760 | 0.4247 | 521 |
-
+The historical text-only sentiment metrics are 52.61% accuracy and 0.5055 macro-F1. The previous fused sentiment results are withdrawn because they used the same label-derived acoustic inputs. Do not interpret these dialogue sentiment scores as call-center performance.
+ 
 ## 4. Speech benchmark: per-call results and limitations
 
-| Scenario | WER | DER (reported) | Discovered speakers | Expected speakers | RTF |
+| Scenario | WER | DER | Discovered speakers | Expected speakers | RTF |
 |---|---:|---:|---:|---:|---:|
-| Retention call | 1.0% | 0.0% | 2 | 2 | 0.130 |
-| Sales expansion | 0.0% | 0.0% | 3 | 2 | 0.072 |
-| Technical escalation | 2.11% | 0.0% | 3 | 2 | 0.081 |
-| Additive-noise stress | 1.0% | 0.0% | 2 | 2 | 0.075 |
+| Retention call | 1.0% | Not measured | 2 | 2 | 0.130 |
+| Sales expansion | 0.0% | Not measured | 3 | 2 | 0.072 |
+| Technical escalation | 2.11% | Not measured | 3 | 2 | 0.081 |
+| Additive-noise stress | 1.0% | Not measured | 2 | 2 | 0.075 |
 
-The perfect reported DER should be interpreted cautiously: two calls produce three speaker clusters when the reference expects two. The reported DER implementation appears to allow optimal mapping without fully reflecting extra discovered clusters in the headline value. Speaker-count accuracy is 2/4 (50%), so the headline DER alone is insufficient. Review the DER implementation and add tests that penalize over-segmentation/extra speakers before using DER as a release gate.
+DER is not measured: the reference turns in this fixture set do not include time boundaries, so the implementation cannot score missed speech, false alarms, or collar-adjusted speaker confusion. The earlier 0.00% DER figure was unsupported and has been withdrawn. Speaker-count accuracy is 2/4 (50%).
 
 The synthetic fixtures also have clean, scripted reference speech and do not cover representative accent, overlap, telephony codec, or noise distributions. A real-call evaluation requires consent, de-identification, independently human-verified transcripts/speaker turns, a held-out split, and results segmented by relevant acoustic conditions.
 
@@ -140,7 +119,7 @@ The synthetic fixtures also have clean, scripted reference speech and do not cov
 
 1. **Fix evaluation accounting:** replace the constant-score dummy PR-AUC interpretation with a prevalence reference and document average-precision vs trapezoidal PR-AUC consistently.
 2. **Strengthen emotion performance:** report per-class confusion changes, tune class weighting only on training/validation data, and evaluate calibration and abstention for low-confidence minority classes.
-3. **Audit diarization scoring:** verify the DER implementation against known over-clustering/under-clustering fixtures and a trusted scorer; publish the scoring code/version and collar.
+3. **Add valid diarization evaluation:** collect time-aligned reference speaker regions and use a trusted DER scorer with a documented collar, then publish reproducible tests.
 4. **Collect representative data:** evaluate only on consented, de-identified calls with independent annotation and a held-out set.
 5. **Make runs fully reproducible:** lock dependencies, hash datasets and fixtures, record hardware/software versions and random seeds, and archive generated JSON/Markdown as CI artifacts.
 

@@ -25,11 +25,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import (
     roc_auc_score,
-    precision_recall_curve,
-    auc,
     classification_report,
     confusion_matrix,
     brier_score_loss,
@@ -37,6 +34,7 @@ from sklearn.metrics import (
     accuracy_score,
     precision_score,
     recall_score,
+    average_precision_score,
 )
 import xgboost as xgb
 import shap
@@ -116,7 +114,7 @@ def evaluate_churn_models() -> Dict[str, Any]:
 
     print(f"[+] Total Records: {total_records:,}")
     print(f"[+] Class Imbalance: Retained={neg_count:,} ({neg_count/total_records:.1%}), Churned={pos_count:,} ({prevalence:.1%})")
-    print(f"[+] Positive Class Prevalence (Random PR-AUC Baseline): {prevalence:.4f}")
+    print(f"[+] Positive Class Prevalence (constant-score AP baseline): {prevalence:.4f}")
 
     # Stratified 80/20 train/test split
     X_train, X_test, y_train, y_test = train_test_split(
@@ -150,8 +148,10 @@ def evaluate_churn_models() -> Dict[str, Any]:
     dummy_probs = np.full(len(y_test), prevalence)
     dummy_pred = np.zeros(len(y_test), dtype=int)
     dummy_roc = float(roc_auc_score(y_test, dummy_probs))
-    dummy_pr, dummy_rec, _ = precision_recall_curve(y_test, dummy_probs)
-    dummy_pr_auc = float(auc(dummy_rec, dummy_pr))
+    # Average precision gives the constant-prevalence classifier its correct baseline:
+    # AP equals the positive-class prevalence for constant scores. Trapezoidal PR-AUC
+    # can misleadingly inflate this baseline because of the artificial endpoint at recall=0.
+    dummy_pr_auc = float(average_precision_score(y_test, dummy_probs))
     dummy_brier = float(brier_score_loss(y_test, dummy_probs))
     dummy_ece, _ = compute_expected_calibration_error(y_test.values, dummy_probs)
 
@@ -165,8 +165,7 @@ def evaluate_churn_models() -> Dict[str, Any]:
     lr_probs = log_reg.predict_proba(X_test_scaled)[:, 1]
     lr_pred = log_reg.predict(X_test_scaled)
     lr_roc = float(roc_auc_score(y_test, lr_probs))
-    lr_pr, lr_rec, _ = precision_recall_curve(y_test, lr_probs)
-    lr_pr_auc = float(auc(lr_rec, lr_pr))
+    lr_pr_auc = float(average_precision_score(y_test, lr_probs))
     lr_brier = float(brier_score_loss(y_test, lr_probs))
     lr_ece, _ = compute_expected_calibration_error(y_test.values, lr_probs)
     lr_f1 = float(f1_score(y_test, lr_pred))
@@ -178,38 +177,41 @@ def evaluate_churn_models() -> Dict[str, Any]:
     rf_probs = rf.predict_proba(X_test_trans)[:, 1]
     rf_pred = rf.predict(X_test_trans)
     rf_roc = float(roc_auc_score(y_test, rf_probs))
-    rf_pr, rf_rec, _ = precision_recall_curve(y_test, rf_probs)
-    rf_pr_auc = float(auc(rf_rec, rf_pr))
+    rf_pr_auc = float(average_precision_score(y_test, rf_probs))
     rf_brier = float(brier_score_loss(y_test, rf_probs))
     rf_ece, _ = compute_expected_calibration_error(y_test.values, rf_probs)
     rf_f1 = float(f1_score(y_test, rf_pred))
 
-    # 4. Production Model: XGBoost Classifier
+    # 4. Production Model: reserve a calibration split from TRAINING data only.
+    # The held-out test labels must never be used for early stopping, fitting, or calibration.
     print("[*] Evaluating Production Model: XGBoost Classifier...")
+    X_fit, X_cal, y_fit, y_cal = train_test_split(
+        X_train_df, y_train, test_size=0.20, random_state=43, stratify=y_train
+    )
     model_artifact_path = MODELS_DIR / "churn_xgb_pipeline.joblib"
     if model_artifact_path.exists():
-        loaded = joblib.load(model_artifact_path)
-        xgb_model = loaded["model"]
-    else:
-        xgb_model = xgb.XGBClassifier(
-            n_estimators=300,
-            max_depth=5,
-            learning_rate=0.05,
-            subsample=0.85,
-            colsample_bytree=0.85,
-            scale_pos_weight=scale_pos_weight,
-            eval_metric=["aucpr", "auc"],
-            random_state=42,
-            tree_method="hist",
-            n_jobs=-1,
-        )
-        xgb_model.fit(X_train_df, y_train, eval_set=[(X_test_df, y_test)], verbose=False)
+        # Existing artifacts may have been trained under a different split/protocol.
+        # Refit during evaluation to keep this benchmark leakage-free and reproducible.
+        print("[!] Ignoring cached XGBoost artifact for evaluation; fitting with current leakage-free split.")
+    xgb_model = xgb.XGBClassifier(
+        n_estimators=300,
+        max_depth=5,
+        learning_rate=0.05,
+        subsample=0.85,
+        colsample_bytree=0.85,
+        scale_pos_weight=scale_pos_weight,
+        eval_metric=["aucpr", "auc"],
+        random_state=42,
+        tree_method="hist",
+        n_jobs=-1,
+    )
+    xgb_model.fit(X_fit, y_fit, verbose=False)
 
     xgb_probs = xgb_model.predict_proba(X_test_df)[:, 1]
+    calibration_probs = xgb_model.predict_proba(X_cal)[:, 1]
     xgb_pred = (xgb_probs >= 0.50).astype(int)
     xgb_roc = float(roc_auc_score(y_test, xgb_probs))
-    xgb_pr, xgb_rec, _ = precision_recall_curve(y_test, xgb_probs)
-    xgb_pr_auc = float(auc(xgb_rec, xgb_pr))
+    xgb_pr_auc = float(average_precision_score(y_test, xgb_probs))
     xgb_brier = float(brier_score_loss(y_test, xgb_probs))
     xgb_ece, xgb_reliability_bins = compute_expected_calibration_error(y_test.values, xgb_probs)
     xgb_f1 = float(f1_score(y_test, xgb_pred))
@@ -217,20 +219,21 @@ def evaluate_churn_models() -> Dict[str, Any]:
     xgb_prec = float(precision_score(y_test, xgb_pred))
     xgb_recall = float(recall_score(y_test, xgb_pred))
 
-    # 5. Calibrated XGBoost (Platt Scaling via Logistic Regression on Logits)
-    print("[*] Calibrating XGBoost with Platt Scaling (Sigmoid / Logistic regression)...")
-    cal_lr = LogisticRegression()
-    # Log-odds of predicted probabilities
+    # 5. Platt calibration fitted only on the dedicated training calibration split.
+    # Report calibrated metrics on the untouched test set for an apples-to-apples comparison.
+    print("[*] Calibrating XGBoost with training-only Platt scaling...")
+    cal_lr = LogisticRegression(max_iter=1000, random_state=42)
     eps = 1e-7
-    clipped_probs = np.clip(xgb_probs, eps, 1.0 - eps)
-    logits = np.log(clipped_probs / (1.0 - clipped_probs)).reshape(-1, 1)
-    # 5-fold or 50% split for calibration fit
-    half = len(logits) // 2
-    cal_lr.fit(logits[:half], y_test.iloc[:half])
-    cal_probs = cal_lr.predict_proba(logits[half:])[:, 1]
-    cal_y_test = y_test.iloc[half:]
-    cal_brier = float(brier_score_loss(cal_y_test, cal_probs))
-    cal_ece, cal_bins = compute_expected_calibration_error(cal_y_test.values, cal_probs)
+    cal_train_clipped = np.clip(calibration_probs, eps, 1.0 - eps)
+    cal_train_logits = np.log(cal_train_clipped / (1.0 - cal_train_clipped)).reshape(-1, 1)
+    cal_lr.fit(cal_train_logits, y_cal)
+    test_clipped = np.clip(xgb_probs, eps, 1.0 - eps)
+    test_logits = np.log(test_clipped / (1.0 - test_clipped)).reshape(-1, 1)
+    cal_probs = cal_lr.predict_proba(test_logits)[:, 1]
+    cal_brier = float(brier_score_loss(y_test, cal_probs))
+    cal_ece, cal_bins = compute_expected_calibration_error(y_test.values, cal_probs)
+    cal_pred = (cal_probs >= 0.50).astype(int)
+    cal_f1 = float(f1_score(y_test, cal_pred))
 
     # 6. 5-Fold Stratified Cross-Validation (Empirical Confidence Intervals)
     print("[*] Running 5-Fold Stratified Cross-Validation for Confidence Intervals...")
@@ -262,8 +265,7 @@ def evaluate_churn_models() -> Dict[str, Any]:
         f_pred = (f_probs >= 0.50).astype(int)
 
         cv_rocs.append(float(roc_auc_score(y_cv.iloc[val_i], f_probs)))
-        f_pr, f_rec, _ = precision_recall_curve(y_cv.iloc[val_i], f_probs)
-        cv_pr_aucs.append(float(auc(f_rec, f_pr)))
+        cv_pr_aucs.append(float(average_precision_score(y_cv.iloc[val_i], f_probs)))
         cv_briers.append(float(brier_score_loss(y_cv.iloc[val_i], f_probs)))
         cv_f1s.append(float(f1_score(y_cv.iloc[val_i], f_pred)))
 
@@ -359,8 +361,8 @@ def evaluate_churn_models() -> Dict[str, Any]:
                 "pr_auc": round(xgb_pr_auc, 4),
                 "brier_score": round(cal_brier, 4),
                 "ece": round(cal_ece, 4),
-                "f1_score": round(xgb_f1, 4),
-                "description": "Post-hoc Platt scaling calibration for optimized probability reliability",
+                "f1_score": round(cal_f1, 4),
+                "description": "Platt scaling fitted on a dedicated training calibration split; metrics evaluated on untouched test data",
             },
         ],
         "production_xgboost_metrics": {
@@ -385,9 +387,15 @@ def evaluate_churn_models() -> Dict[str, Any]:
 
 
 def evaluate_meld_models() -> Dict[str, Any]:
-    print("\n" + "="*70)
-    print("STEP 2: EVALUATING MELD CONVERSATIONAL EMOTION CLASSIFIER")
-    print("="*70)
+    """Evaluate MELD text-only models without leaking ground-truth labels into features.
+
+    MELD's checked-in split contains utterance text and labels, but this evaluation
+    path does not load aligned audio features. Acoustic fusion is therefore marked
+    unavailable instead of fabricating pitch/energy values from the true emotion.
+    """
+    print("\\n" + "=" * 70)
+    print("STEP 2: EVALUATING MELD CONVERSATIONAL EMOTION CLASSIFIER (TEXT ONLY)")
+    print("=" * 70)
 
     classifier = MeldClassifier()
     if not classifier.is_ready:
@@ -402,125 +410,94 @@ def evaluate_meld_models() -> Dict[str, Any]:
     with open(test_file, "r", encoding="utf-8") as f:
         dialogues = json.load(f)
 
-    y_true_emotion = []
-    y_pred_lex_emotion = []
-    y_pred_multi_emotion = []
-    y_true_sentiment = []
-    y_pred_lex_sentiment = []
-    y_pred_multi_sentiment = []
-
-    for d_id, turns in dialogues.items():
-        turns_sorted = sorted(turns, key=lambda x: x.get("utterance_id", 0))
-        for turn in turns_sorted:
+    y_true_emotion, y_pred_emotion = [], []
+    y_true_sentiment, y_pred_sentiment = [], []
+    for _, turns in dialogues.items():
+        for turn in sorted(turns, key=lambda x: x.get("utterance_id", 0)):
             text = turn.get("utterance", "").strip()
             if not text:
                 continue
             true_emo = turn.get("emotion", "neutral").lower()
             true_sent = turn.get("sentiment", "neutral").lower()
-
-            # 1. Lexical prediction
-            pred_lex = classifier.predict_turn(utterance=text, speaker=turn.get("speaker", "Other"))
-
-            # 2. Multimodal prediction with prosodic cues
-            mock_pitch = 245.0 if true_emo in ["anger", "joy", "surprise"] else (135.0 if true_emo in ["sadness"] else 165.0)
-            mock_centroid = 2850.0 if true_emo in ["anger", "joy"] else 1850.0
-            mock_voiced = 0.85 if true_emo not in ["sadness"] else 0.50
-            mock_energy = 0.08 if true_emo in ["anger", "joy"] else 0.03
-
-            pred_multi = classifier.predict_turn_multimodal(
+            prediction = classifier.predict_turn(
                 utterance=text,
                 speaker=turn.get("speaker", "Other"),
-                acoustic_metrics={
-                    "mean_pitch_hz": mock_pitch,
-                    "spectral_centroid_hz": mock_centroid,
-                    "voiced_ratio": mock_voiced,
-                    "rms_energy": mock_energy,
-                },
             )
-
             y_true_emotion.append(true_emo)
-            y_pred_lex_emotion.append(pred_lex["emotion"]["label"])
-            y_pred_multi_emotion.append(pred_multi["emotion"]["label"])
-
+            y_pred_emotion.append(prediction["emotion"]["label"].lower())
             y_true_sentiment.append(true_sent)
-            y_pred_lex_sentiment.append(pred_lex["sentiment"]["label"])
-            y_pred_multi_sentiment.append(pred_multi["sentiment"]["label"])
+            y_pred_sentiment.append(prediction["sentiment"]["label"].lower())
 
-    emo_labels = sorted(list(set(y_true_emotion)))
-    sent_labels = sorted(list(set(y_true_sentiment)))
+    if not y_true_emotion:
+        raise ValueError(f"No non-empty utterances found in {test_file}")
 
-    # Emotion class distribution
+    emo_labels = sorted(set(y_true_emotion))
+    sent_labels = sorted(set(y_true_sentiment))
     emo_counts = pd.Series(y_true_emotion).value_counts().to_dict()
-    majority_emo = max(emo_counts.keys(), key=lambda k: emo_counts[k])
-    majority_acc = emo_counts[majority_emo] / len(y_true_emotion)
+    majority_emo = max(emo_counts, key=emo_counts.get)
+    majority_acc = float(emo_counts[majority_emo] / len(y_true_emotion))
 
-    # Lexical metrics
-    emo_lex_acc = float(accuracy_score(y_true_emotion, y_pred_lex_emotion))
-    emo_lex_macro_f1 = float(f1_score(y_true_emotion, y_pred_lex_emotion, average="macro"))
-    emo_lex_weighted_f1 = float(f1_score(y_true_emotion, y_pred_lex_emotion, average="weighted"))
+    emo_acc = float(accuracy_score(y_true_emotion, y_pred_emotion))
+    emo_macro_f1 = float(f1_score(y_true_emotion, y_pred_emotion, average="macro", zero_division=0))
+    emo_weighted_f1 = float(f1_score(y_true_emotion, y_pred_emotion, average="weighted", zero_division=0))
+    sent_acc = float(accuracy_score(y_true_sentiment, y_pred_sentiment))
+    sent_macro_f1 = float(f1_score(y_true_sentiment, y_pred_sentiment, average="macro", zero_division=0))
+    sent_weighted_f1 = float(f1_score(y_true_sentiment, y_pred_sentiment, average="weighted", zero_division=0))
 
-    # Multimodal metrics
-    emo_multi_acc = float(accuracy_score(y_true_emotion, y_pred_multi_emotion))
-    emo_multi_macro_f1 = float(f1_score(y_true_emotion, y_pred_multi_emotion, average="macro"))
-    emo_multi_weighted_f1 = float(f1_score(y_true_emotion, y_pred_multi_emotion, average="weighted"))
+    emotion_text_only = {
+        "accuracy": round(emo_acc, 4),
+        "macro_f1": round(emo_macro_f1, 4),
+        "weighted_f1": round(emo_weighted_f1, 4),
+    }
+    sentiment_text_only = {
+        "accuracy": round(sent_acc, 4),
+        "macro_f1": round(sent_macro_f1, 4),
+        "weighted_f1": round(sent_weighted_f1, 4),
+    }
+    unavailable_fusion = {
+        "available": False,
+        "reason": "No aligned audio features are loaded for MELD evaluation. Synthetic acoustic values derived from the true emotion label are intentionally not used.",
+    }
+    print(f"[MELD] Text-only emotion accuracy={emo_acc:.4f}, macro-F1={emo_macro_f1:.4f}; majority baseline={majority_acc:.4f}")
+    print(f"[MELD] Text-only sentiment accuracy={sent_acc:.4f}, macro-F1={sent_macro_f1:.4f}")
 
-    sent_lex_acc = float(accuracy_score(y_true_sentiment, y_pred_lex_sentiment))
-    sent_lex_macro_f1 = float(f1_score(y_true_sentiment, y_pred_lex_sentiment, average="macro"))
-    sent_lex_weighted_f1 = float(f1_score(y_true_sentiment, y_pred_lex_sentiment, average="weighted"))
-
-    sent_multi_acc = float(accuracy_score(y_true_sentiment, y_pred_multi_sentiment))
-    sent_multi_macro_f1 = float(f1_score(y_true_sentiment, y_pred_multi_sentiment, average="macro"))
-    sent_multi_weighted_f1 = float(f1_score(y_true_sentiment, y_pred_multi_sentiment, average="weighted"))
-
-    meld_results = {
+    return {
+        "evaluation_mode": "text_only_no_label_derived_acoustic_features",
         "dataset_split": {
             "test_turns": len(y_true_emotion),
             "test_dialogues": len(dialogues),
-            "class_imbalance": {k: {"count": v, "percentage": round(v / len(y_true_emotion) * 100, 2)} for k, v in emo_counts.items()},
+            "class_imbalance": {
+                k: {"count": int(v), "percentage": round(v / len(y_true_emotion) * 100, 2)}
+                for k, v in emo_counts.items()
+            },
         },
         "emotion_evaluation": {
             "majority_baseline_accuracy": round(majority_acc, 4),
             "majority_baseline_class": majority_emo,
-            "lexical_text_only": {
-                "accuracy": round(emo_lex_acc, 4),
-                "macro_f1": round(emo_lex_macro_f1, 4),
-                "weighted_f1": round(emo_lex_weighted_f1, 4),
-            },
-            "multimodal_acoustic_fused": {
-                "accuracy": round(emo_multi_acc, 4),
-                "macro_f1": round(emo_multi_macro_f1, 4),
-                "weighted_f1": round(emo_multi_weighted_f1, 4),
-                "fusion_weights": {"text": 0.75, "acoustic": 0.25},
-            },
-            # Primary legacy keys for backward compatibility
-            "accuracy": round(emo_multi_acc, 4),
-            "macro_f1": round(emo_multi_macro_f1, 4),
-            "weighted_f1": round(emo_multi_weighted_f1, 4),
-            "classification_report": classification_report(y_true_emotion, y_pred_multi_emotion, output_dict=True),
+            "lexical_text_only": emotion_text_only,
+            "multimodal_acoustic_fused": unavailable_fusion,
+            "accuracy": emotion_text_only["accuracy"],
+            "macro_f1": emotion_text_only["macro_f1"],
+            "weighted_f1": emotion_text_only["weighted_f1"],
+            "classification_report": classification_report(
+                y_true_emotion, y_pred_emotion, labels=emo_labels, output_dict=True, zero_division=0
+            ),
             "confusion_matrix": {
                 "labels": emo_labels,
-                "matrix": confusion_matrix(y_true_emotion, y_pred_multi_emotion, labels=emo_labels).tolist(),
+                "matrix": confusion_matrix(y_true_emotion, y_pred_emotion, labels=emo_labels).tolist(),
             },
         },
         "sentiment_evaluation": {
-            "lexical_text_only": {
-                "accuracy": round(sent_lex_acc, 4),
-                "macro_f1": round(sent_lex_macro_f1, 4),
-                "weighted_f1": round(sent_lex_weighted_f1, 4),
-            },
-            "multimodal_acoustic_fused": {
-                "accuracy": round(sent_multi_acc, 4),
-                "macro_f1": round(sent_multi_macro_f1, 4),
-                "weighted_f1": round(sent_multi_weighted_f1, 4),
-            },
-            "accuracy": round(sent_multi_acc, 4),
-            "macro_f1": round(sent_multi_macro_f1, 4),
-            "weighted_f1": round(sent_multi_weighted_f1, 4),
-            "classification_report": classification_report(y_true_sentiment, y_pred_multi_sentiment, output_dict=True),
+            "lexical_text_only": sentiment_text_only,
+            "multimodal_acoustic_fused": unavailable_fusion,
+            "accuracy": sentiment_text_only["accuracy"],
+            "macro_f1": sentiment_text_only["macro_f1"],
+            "weighted_f1": sentiment_text_only["weighted_f1"],
+            "classification_report": classification_report(
+                y_true_sentiment, y_pred_sentiment, labels=sent_labels, output_dict=True, zero_division=0
+            ),
         },
     }
-
-    return meld_results
 
 
 def generate_markdown_report(churn_eval: Dict[str, Any], meld_eval: Dict[str, Any], out_path: Path):
@@ -544,16 +521,16 @@ def generate_markdown_report(churn_eval: Dict[str, Any], meld_eval: Dict[str, An
     md.append(f"- **Class Distribution**:")
     md.append(f"  - Retained (0): `{imb['class_0_retained']:,}` ({1 - imb['churn_rate']:.1%})")
     md.append(f"  - Churned (1): `{imb['class_1_churned']:,}` ({imb['churn_rate']:.1%})")
-    md.append(f"- **Class Imbalance Handling**: `scale_pos_weight = {imb['scale_pos_weight']}` in XGBoost loss, paired with PR-AUC evaluation to prevent true-negative skew.")
+    md.append(f"- **Class Imbalance Handling**: `scale_pos_weight = {imb['scale_pos_weight']}` in XGBoost loss, paired with average-precision (AP) evaluation to account for class imbalance.")
     md.append("")
     md.append("### 1.2 Baseline Comparisons on Identical Test Split")
     md.append("")
-    md.append("| Model Architecture | ROC-AUC | PR-AUC | Brier Score | ECE | F1 Score | Description |")
+    md.append("| Model Architecture | ROC-AUC | Average Precision (AP) | Brier Score | ECE | F1 Score | Description |")
     md.append("| :--- | :---: | :---: | :---: | :---: | :---: | :--- |")
     for b in churn_eval["baseline_comparison"]:
         md.append(f"| **{b['model']}** | `{b['roc_auc']:.4f}` | `{b['pr_auc']:.4f}` | `{b['brier_score']:.4f}` | `{b['ece']:.4f}` | `{b['f1_score']:.4f}` | {b['description']} |")
     md.append("")
-    md.append(f"> **Key Finding**: Production XGBoost delivers **`{churn_eval['production_xgboost_metrics']['pr_auc']:.4f}` PR-AUC**, achieving a **`+{churn_eval['production_xgboost_metrics']['pr_auc_lift_over_baseline']:.4f}` lift** over the random prevalence baseline (`{imb['churn_rate']:.4f}`). Platt scaling achieves lowest Brier score calibration.")
+    md.append(f"> **Key Finding**: Production XGBoost delivers **`{churn_eval['production_xgboost_metrics']['pr_auc']:.4f}` average precision (AP)**, achieving a **`+{churn_eval['production_xgboost_metrics']['pr_auc_lift_over_baseline']:.4f}` lift** over the random prevalence baseline (`{imb['churn_rate']:.4f}`). Platt scaling achieves lowest Brier score calibration.")
     md.append("")
     md.append("### 1.3 Probability Calibration & Reliability Analysis")
     md.append("")
@@ -630,18 +607,16 @@ def generate_markdown_report(churn_eval: Dict[str, Any], meld_eval: Dict[str, An
 
         if "lexical_text_only" in e_eval and "multimodal_acoustic_fused" in e_eval:
             lex_e = e_eval["lexical_text_only"]
-            mul_e = e_eval["multimodal_acoustic_fused"]
             lex_s = s_eval["lexical_text_only"]
-            mul_s = s_eval["multimodal_acoustic_fused"]
-            md.append("### 2.2 Multimodal Acoustic-Lexical Ablation")
+            fusion = e_eval["multimodal_acoustic_fused"]
+            md.append("### 2.2 Modality Ablation and Limitations")
             md.append("")
-            md.append("| Modality | Emotion Accuracy | Emotion Macro F1 | Sentiment Accuracy | Sentiment Macro F1 |")
-            md.append("| :--- | :---: | :---: | :---: | :---: |")
-            md.append(f"| **Lexical Text Only (TF-IDF)** | `{lex_e['accuracy']:.2%}` | `{lex_e['macro_f1']:.4f}` | `{lex_s['accuracy']:.2%}` | `{lex_s['macro_f1']:.4f}` |")
-            md.append(f"| **Multimodal Fused (Acoustic + Text)** | **`{mul_e['accuracy']:.2%}`** | **`{mul_e['macro_f1']:.4f}`** | **`{mul_s['accuracy']:.2%}`** | **`{mul_s['macro_f1']:.4f}`** |")
+            md.append(f"| **Text-only emotion** | `{lex_e['accuracy']:.2%}` accuracy | `{lex_e['macro_f1']:.4f}` macro-F1 |")
+            md.append(f"| **Text-only sentiment** | `{lex_s['accuracy']:.2%}` accuracy | `{lex_s['macro_f1']:.4f}` macro-F1 |")
             md.append("")
-            md.append("> **Acoustic Fusion Impact**: Calibrated late fusion ($0.75 \\text{ text} + 0.25 \\text{ acoustic}$) blends prosodic vocal tension (F0 pitch, spectral centroid, voiced ratio) with lexical intent, reducing false neutrality on vocally distressed customers.")
-            md.append("")
+            if not fusion.get("available", False):
+                md.append("> **Audio fusion not evaluated.** This MELD evaluation path does not load aligned audio features. Previous synthetic pitch/energy values derived from the ground-truth emotion label constituted target leakage and are no longer used. A valid multimodal comparison requires real, aligned audio features and a held-out evaluation.")
+                md.append("")
 
     md.append("---")
     md.append("")
