@@ -250,7 +250,7 @@ def compute_der(
             "hyp_speaker": str(hyp.get("speaker", "Unknown")),
             "ref_speaker": str(best_ref.get("speaker", "Unknown")) if best_ref else "Unknown",
             "duration": max(0.0, float(hyp.get("end_seconds", 0.0)) - float(hyp.get("start_seconds", 0.0))),
-            "overlap_tokens": int(best_overlap),
+            "overlap_tokens": best_overlap,
         })
 
     hyp_speakers = sorted({row["hyp_speaker"] for row in aligned})
