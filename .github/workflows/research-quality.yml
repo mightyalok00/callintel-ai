@@ -1,0 +1,72 @@
+name: CallIntel AI Research Quality Gate
+
+on:
+  push:
+    branches: [main, research-quality-gate]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: callintel-research-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Integrity, tests and evaluation / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.12"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install Linux audio libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libsndfile1
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -e .
+      - name: Validate MELD split integrity
+        env:
+          PYTHONPATH: .
+        run: python training/validate_meld_splits.py
+      - name: Run tests
+        env:
+          PYTHONPATH: .
+        run: python -m pytest tests/ -v --tb=short
+      - name: Reproduce ML evaluation
+        env:
+          PYTHONPATH: .
+        run: python training/evaluate_ml_models.py
+      - name: Run controlled speech regression benchmark
+        env:
+          PYTHONPATH: .
+        run: python training/benchmark_speech.py
+      - name: Upload evaluation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: callintel-evaluation-${{ matrix.os }}-${{ github.sha }}
+          if-no-files-found: warn
+          path: |
+            reports/ml_evaluation_benchmark.json
+            reports/ML_EVALUATION.md
+            reports/speech_benchmark_report.json
+            reports/SPEECH_BENCHMARK.md
