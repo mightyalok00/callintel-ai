@@ -1,0 +1,62 @@
+{
+  "timestamp": "2026-10-13T07:18:16Z",
+  "calls_evaluated": 2,
+  "stage_timings_ms": {
+    "model_initialization": 435.98
+  },
+  "pipeline_stages": {},
+  "call_results": [
+    {
+      "call_id": "VERIFY_CALL_001_CHURN_RISK",
+      "audio_size_kb": 1978.29,
+      "num_turns": 9,
+      "primary_intent": "pricing_objection",
+      "overall_sentiment": "mixed",
+      "churn_score": 0.99,
+      "churn_level": "CRITICAL",
+      "timings_ms": {
+        "asr": 3944.04,
+        "emotion": 14.91,
+        "churn": 23.61,
+        "agents": 2.01
+      },
+      "evidence_audit": {
+        "total_findings": 5,
+        "supported_count": 5,
+        "insufficient_count": 0,
+        "contradicted_count": 0,
+        "grounding_pass_rate": 1.0
+      }
+    },
+    {
+      "call_id": "VERIFY_CALL_002_TECH_SUPPORT",
+      "audio_size_kb": 1798.89,
+      "num_turns": 8,
+      "primary_intent": "general_inquiry",
+      "overall_sentiment": "mixed",
+      "churn_score": 0.5644,
+      "churn_level": "ELEVATED",
+      "timings_ms": {
+        "asr": 2903.1,
+        "emotion": 31.74,
+        "churn": 18.57,
+        "agents": 0.0
+      },
+      "evidence_audit": {
+        "total_findings": 3,
+        "supported_count": 3,
+        "insufficient_count": 0,
+        "contradicted_count": 0,
+        "grounding_pass_rate": 1.0
+      }
+    }
+  ],
+  "overall_status": "PASSED",
+  "total_execution_seconds": 7.38,
+  "aggregate_audit": {
+    "total_findings": 8,
+    "supported_count": 8,
+    "refuted_or_abstain_count": 0,
+    "overall_grounding_pass_rate": 1.0
+  }
+}

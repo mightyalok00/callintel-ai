@@ -216,7 +216,11 @@ The backend is built with **FastAPI** (`src/callintel/api/app.py`) and backed by
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `GET` | `/health` | System health check and model readiness status |
+| `GET` | `/health/live` | Kubernetes/container liveness probe (process uptime, PID, responsiveness) |
+| `GET` | `/health/ready` | Readiness probe (database connectivity, ML model artifacts, storage writability) |
+| `GET` | `/metrics` | Telemetry & Observability (traffic counters, latency, Prometheus-compatible export) |
 | `POST` | `/api/v1/calls/upload` | Hardened multipart audio upload (magic-byte validation, 100MB limit, sanitized path) |
+| `GET` | `/api/v1/calls` | List paginated call records, filtering by sentiment, churn tier, or intent |
 | `GET` | `/api/v1/calls/{call_id}` | Retrieve call metadata, duration, and processing status |
 | `DELETE` | `/api/v1/calls/{call_id}` | Delete a specific call recording and database records |
 | `DELETE` | `/api/v1/calls/history` | Purge all call history and reset contact center state |
@@ -247,13 +251,23 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Run the Full Test Suite
+### 2. Run the Full Test Suite & Verification Gates
 
 ```bash
+# 1. Run all 67 unit, integration, and API tests
 pytest tests/ -v
+
+# 2. Run deployment readiness smoke test
+python scripts/production_smoke_test.py
+
+# 3. Run deterministic end-to-end pipeline verification (ASR -> Emotion -> Churn -> Multi-Agent Grounding)
+python scripts/verify_pipeline.py
+
+# 4. Run reproducible ML evaluation & error analysis suite
+python training/evaluate_ml_models.py
 ```
 
-*See the latest [Research Quality Gate workflow](https://github.com/mightyalok00/callintel-ai/actions/workflows/research-quality.yml) for current test and evaluation results.*
+*See the [Pipeline Verification Report](reports/PIPELINE_VERIFICATION_REPORT.md) and [ML Evaluation Report](reports/ML_EVALUATION.md) for generated benchmark artifacts.*
 
 ### 3. Launch the FastAPI Service
 
@@ -284,7 +298,7 @@ Open `http://localhost:8501` to access:
 docker-compose up --build
 ```
 
-This boots both the FastAPI backend (`port 8000`) and the Streamlit dashboard (`port 8501`) concurrently.
+Boots both the FastAPI backend (`port 8000`) and the Streamlit dashboard (`port 8501`) with container health checks and dependencies verified.
 
 ---
 

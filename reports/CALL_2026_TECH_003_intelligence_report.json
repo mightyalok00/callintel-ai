@@ -117,20 +117,20 @@
       "end_seconds": 19.2,
       "verbatim_quote": "are failing. I see the severity. Let me pull up your account telemetry and run a note health",
       "supporting_signals": {
-        "emotion": "joy",
+        "emotion": "neutral",
         "sentiment": "neutral"
       }
     },
     {
       "turn_id": 4,
-      "speaker": "Agent",
+      "speaker": "Customer",
       "start_time": "00:00:19.200",
       "end_time": "00:00:24.000",
       "start_seconds": 19.2,
       "end_seconds": 24.0,
       "verbatim_quote": "diagnosis immediately. We are losing revenue every minute this persists.",
       "supporting_signals": {
-        "emotion": "anger",
+        "emotion": "neutral",
         "sentiment": "neutral"
       }
     },
@@ -156,7 +156,7 @@
       "end_seconds": 34.8,
       "verbatim_quote": "Understood. I have escalated this as a severity one emergency to our senior site reliability",
       "supporting_signals": {
-        "emotion": "anger",
+        "emotion": "neutral",
         "sentiment": "neutral"
       }
     },
@@ -169,7 +169,7 @@
       "end_seconds": 40.8,
       "verbatim_quote": "engineers. Thank you. We will monitor the emergency Slack channel for their immediate response.",
       "supporting_signals": {
-        "emotion": "joy",
+        "emotion": "neutral",
         "sentiment": "neutral"
       }
     }

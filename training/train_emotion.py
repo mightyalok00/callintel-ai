@@ -95,19 +95,30 @@ def train_and_evaluate():
     print("\n" + "="*50)
     print("[*] Training Emotion Classifier (7 classes with balanced class weights)...")
     
+    from sklearn.pipeline import FeatureUnion
+
     emotion_pipeline = Pipeline([
-        ("tfidf", TfidfVectorizer(
-            ngram_range=(1, 2),
-            max_features=16000,
-            sublinear_tf=True,
-            min_df=2
-        )),
+        ("union", FeatureUnion([
+            ("word", TfidfVectorizer(
+                ngram_range=(1, 3),
+                min_df=2,
+                sublinear_tf=True,
+                strip_accents="unicode",
+            )),
+            ("char", TfidfVectorizer(
+                analyzer="char_wb",
+                ngram_range=(3, 5),
+                min_df=5,
+                sublinear_tf=True,
+            )),
+        ])),
         ("clf", LogisticRegression(
             class_weight="balanced",
             max_iter=2000,
-            C=2.5,
-            solver="lbfgs"
-        ))
+            C=1.5,
+            solver="lbfgs",
+            random_state=42,
+        )),
     ])
 
     emotion_pipeline.fit(all_train_texts, all_train_emotions)

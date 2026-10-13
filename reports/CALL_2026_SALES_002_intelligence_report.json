@@ -129,7 +129,7 @@
       "end_seconds": 7.36,
       "verbatim_quote": "How can I assist your team today?",
       "supporting_signals": {
-        "emotion": "anger",
+        "emotion": "neutral",
         "sentiment": "negative"
       }
     },
@@ -233,7 +233,7 @@
       "end_seconds": 41.76,
       "verbatim_quote": "and 24-7 priority support.",
       "supporting_signals": {
-        "emotion": "joy",
+        "emotion": "neutral",
         "sentiment": "positive"
       }
     },
