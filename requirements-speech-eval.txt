@@ -1,0 +1,3 @@
+# Optional dependencies for recognized diarization scoring (not required by app runtime)
+pyannote.core>=5.0,<6
+pyannote.metrics>=3.2,<4
