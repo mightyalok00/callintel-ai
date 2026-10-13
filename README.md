@@ -1,7 +1,7 @@
 # AI Call Intelligence Engine
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://callintel-ai.streamlit.app/)
-[![CallIntel AI CI Pipeline](https://github.com/mightyalok00/callintel-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/mightyalok00/callintel-ai/actions/workflows/ci.yml)
+[![CallIntel AI CI Pipeline](https://github.com/mightyalok00/callintel-ai/actions/workflows/research-quality.yml/badge.svg)](https://github.com/mightyalok00/callintel-ai/actions/workflows/research-quality.yml)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.42-FF4B4B.svg)](https://streamlit.io/)
@@ -15,7 +15,7 @@
 
 Open the [CallIntel AI dashboard](https://callintel-ai.streamlit.app/) to explore the executive overview, sample call scenarios, sentiment timeline, retention-risk/SHAP view, multi-agent decision hub, model benchmarks, and evidence ledger. The hosted demo is intended for exploration; the included call scenarios and reported speech scores are controlled fixtures, not evidence of performance on real customer calls. Avoid uploading sensitive or personally identifiable call recordings to a public demo.
 
-**Evaluation and reproducibility:** [Reproducible Evaluation Report](reports/REPRODUCIBLE_EVALUATION_REPORT.md) · [Machine-readable ML metrics](reports/ml_evaluation_benchmark.json) · [Speech benchmark report](reports/SPEECH_BENCHMARK.md)
+**Evaluation and reproducibility:** [Evaluation protocol](docs/EVALUATION_PROTOCOL.md) · [Reproducible Evaluation Report](reports/REPRODUCIBLE_EVALUATION_REPORT.md) · [Machine-readable ML metrics](reports/ml_evaluation_benchmark.json) · [Speech benchmark report](reports/SPEECH_BENCHMARK.md)
 
 ### Dashboard preview
 
