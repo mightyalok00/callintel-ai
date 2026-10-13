@@ -1,6 +1,6 @@
 # Reproducible Evaluation Report — CallIntel AI
 
-**Evaluation artifact snapshot:** 2026-10-12  
+**Checked-in artifact snapshot:** 2026-10-12 (historical; see current CI artifacts for fresh metrics)  
 **Repository:** [mightyalok00/callintel-ai](https://github.com/mightyalok00/callintel-ai)  
 **Primary machine-readable results:** [`ml_evaluation_benchmark.json`](ml_evaluation_benchmark.json) · [`speech_benchmark_report.json`](speech_benchmark_report.json)  
 **Detailed existing reports:** [ML evaluation](ML_EVALUATION.md) · [Speech benchmark](SPEECH_BENCHMARK.md)
@@ -12,9 +12,13 @@
 | Task | Evaluation data | Primary result | Baseline / interpretation |
 |---|---|---|---|
 | Account-level bank churn | 33,007-row stratified test split from 165,031 account records | XGBoost ROC-AUC **0.8808**, PR-AUC **0.7109**, F1 **0.6331** | Beats the 0.5 ROC-AUC ranking baseline and the churn prevalence of **0.2116** as a PR reference; see the PR-AUC note below |
-| MELD 7-class emotion | 2,610 utterances / 280 dialogues | Accuracy **0.4785**, macro-F1 **0.3334**, weighted-F1 **0.4835** | Accuracy is **below** the neutral-majority baseline of 0.4812; macro-F1 improves the view beyond majority accuracy but minority classes remain weak |
+| MELD 7-class emotion | 2,610 utterances / 280 dialogues | Latest CI: Linux accuracy **0.4226**, macro-F1 **0.3165** (95% dialogue-bootstrap CI **0.2966–0.3351**); Windows accuracy **0.4230**, macro-F1 **0.3166** (CI **0.2969–0.3351**) | Majority accuracy **0.4812**; majority macro-F1 **0.0928**. Accuracy is below majority baseline; macro-F1 is higher. Fresh per-class F1 and JSON are published by the Research Quality Gate workflow. |
 | MELD 3-class sentiment | Same 2,610 utterance test set | Accuracy **0.5268**, macro-F1 **0.5063**, weighted-F1 **0.5301** | Accuracy is 4.56 percentage points above the 0.4812 majority baseline |
 | Speech transcription / diarization | 4 controlled sample calls | Mean WER **1.03%**, DER **not measured** (reference timestamps are missing), mean RTF **0.090x** | Fixture-only result. DER cannot be calculated from the available untimed reference turns. Speaker-count discovery was correct on only **2 of 4** calls (50%); do not infer real-call performance |
+
+## Current MELD evaluation status
+
+The current CI run trains a text-only TF-IDF + class-weighted Logistic Regression model on official MELD train and evaluates the official held-out test split. The most recent successful main-branch run reported accuracy 0.4226 (Linux) / 0.4230 (Windows), macro-F1 0.3165 / 0.3166, with dialogue-bootstrap 95% CIs 0.2966–0.3351 / 0.2969–0.3351. The majority classifier achieves accuracy 0.4812 and macro-F1 0.0928. This model therefore does **not** beat majority-class accuracy, although its macro-F1 is higher. Treat this as a text-only scripted-dialogue baseline, not call-center emotion accuracy. The replacement Research Quality Gate uploads freshly generated per-class F1 and machine-readable results.
 
 ## 1. Reproduction
 
