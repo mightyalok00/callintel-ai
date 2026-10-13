@@ -661,36 +661,46 @@ def generate_markdown_report(churn_eval: Dict[str, Any], meld_eval: Dict[str, An
     md.append("")
 
     if meld_eval:
-        md.append("## 2. Conversational Emotion & Sentiment Model Evaluation (MELD)")
+        md.append("## 2. Held-Out MELD Emotion Evaluation")
         md.append("")
         m_split = meld_eval["dataset_split"]
-        md.append(f"- **Test Dialogue Utterances**: `{m_split['test_turns']:,}` across `{m_split['test_dialogues']:,}` dialogues")
-        md.append("- **Class Distribution (7 Emotions)**:")
+        model_info = meld_eval["model"]
+        md.append(f"- **Model**: \`{model_info['name']}\`")
+        md.append(f"- **Training data**: \`{model_info['training_utterances']:,}\` utterances across \`{model_info['training_dialogues']:,}\` dialogues")
+        md.append(f"- **Held-out test**: \`{m_split['test_turns']:,}\` utterances across \`{m_split['test_dialogues']:,}\` dialogues")
+        md.append("- **Test class distribution**:")
         for emo, dat in m_split["class_imbalance"].items():
-            md.append(f"  - `{emo}`: `{dat['count']:,}` ({dat['percentage']}%)")
+            md.append(f"  - \`{emo}\`: \`{dat['count']:,}\` ({dat['percentage']}%)")
         md.append("")
         e_eval = meld_eval["emotion_evaluation"]
-        s_eval = meld_eval["sentiment_evaluation"]
-        md.append("### 2.1 Benchmark Performance")
+        ci = e_eval["macro_f1_uncertainty"]
+        baseline_ci = e_eval["majority_macro_f1_uncertainty"]
+        md.append("### 2.1 Test-set results")
         md.append("")
-        md.append("| Task | Majority Baseline Acc | Accuracy | Macro F1 | Weighted F1 |")
-        md.append("| :--- | :---: | :---: | :---: | :---: |")
-        md.append(f"| **7-Class Emotion** | `{e_eval['majority_baseline_accuracy']:.2%}` ({e_eval['majority_baseline_class']}) | `{e_eval['accuracy']:.2%}` | `{e_eval['macro_f1']:.4f}` | `{e_eval['weighted_f1']:.4f}` |")
-        md.append(f"| **3-Class Sentiment** | `48.12%` (Neutral) | `{s_eval['accuracy']:.2%}` | `{s_eval['macro_f1']:.4f}` | `{s_eval['weighted_f1']:.4f}` |")
+        md.append("| Model | Accuracy | Macro-F1 | Weighted-F1 |")
+        md.append("| :--- | :---: | :---: | :---: |")
+        md.append(f"| Majority-class baseline (\`{e_eval['majority_baseline_class']}\`) | \`{e_eval['majority_baseline_accuracy']:.4f}\` | \`{e_eval['majority_baseline_macro_f1']:.4f}\` | — |")
+        md.append(f"| TF-IDF + class-weighted Logistic Regression | \`{e_eval['accuracy']:.4f}\` | \`{e_eval['macro_f1']:.4f}\` | \`{e_eval['weighted_f1']:.4f}\` |")
         md.append("")
-
-        if "lexical_text_only" in e_eval and "multimodal_acoustic_fused" in e_eval:
-            lex_e = e_eval["lexical_text_only"]
-            lex_s = s_eval["lexical_text_only"]
-            fusion = e_eval["multimodal_acoustic_fused"]
-            md.append("### 2.2 Modality Ablation and Limitations")
-            md.append("")
-            md.append(f"| **Text-only emotion** | `{lex_e['accuracy']:.2%}` accuracy | `{lex_e['macro_f1']:.4f}` macro-F1 |")
-            md.append(f"| **Text-only sentiment** | `{lex_s['accuracy']:.2%}` accuracy | `{lex_s['macro_f1']:.4f}` macro-F1 |")
-            md.append("")
-            if not fusion.get("available", False):
-                md.append("> **Audio fusion not evaluated.** This MELD evaluation path does not load aligned audio features. Previous synthetic pitch/energy values derived from the ground-truth emotion label constituted target leakage and are no longer used. A valid multimodal comparison requires real, aligned audio features and a held-out evaluation.")
-                md.append("")
+        md.append(f"- **Macro-F1 lift over majority**: \`{e_eval['macro_f1_lift_over_majority']:+.4f}\`")
+        md.append(f"- **95% dialogue-bootstrap CI, model macro-F1**: \`[{ci['lower_95']:.4f}, {ci['upper_95']:.4f}]\`")
+        md.append(f"- **95% dialogue-bootstrap CI, majority macro-F1**: \`[{baseline_ci['lower_95']:.4f}, {baseline_ci['upper_95']:.4f}]\`")
+        md.append(f"- **Beats majority macro-F1**: \`{e_eval['beats_majority_macro_f1']}\`")
+        md.append("")
+        md.append("### 2.2 Per-class results")
+        md.append("")
+        md.append("| Emotion | Support | Precision | Recall | F1 | Majority F1 |")
+        md.append("| :--- | ---: | ---: | ---: | ---: | ---: |")
+        for label, row in e_eval["per_class"].items():
+            md.append(f"| \`{label}\` | {row['support']:,} | {row['precision']:.4f} | {row['recall']:.4f} | {row['f1']:.4f} | {row['majority_baseline_f1']:.4f} |")
+        md.append("")
+        md.append("### 2.3 Interpretation and limitations")
+        md.append("")
+        md.append("Confidence intervals resample whole dialogues to account for dependence between turns in a dialogue. They quantify uncertainty on the MELD test set only; they are not a confidence interval for call-center performance.")
+        for limitation in meld_eval.get("scope_limitations", []):
+            md.append(f"- {limitation}")
+        md.append("- Acoustic fusion is not evaluated; no synthetic or label-derived audio features are used.")
+        md.append("")
 
     md.append("---")
     md.append("")
