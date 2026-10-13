@@ -26,10 +26,11 @@ def test_validator_fails_closed_on_missing_official_partition(tmp_path):
 def test_validator_detects_exact_duplicate_dialogue_content_across_splits(tmp_path, monkeypatch):
     data = tmp_path / "meld"; raw = tmp_path / "raw"; data.mkdir(); raw.mkdir()
     monkeypatch.setattr(validator, "EXPECTED", {s: {"utterances": 1, "dialogues": 1} for s in ("train", "dev", "test")})
-    (data / "meld_train_dialogues.json").write_text(json.dumps({"0": [_turn()]}), encoding="utf-8")
-    (data / "meld_dev_dialogues.json").write_text(json.dumps({"0": [_turn()]}), encoding="utf-8")
+    duplicate = [_turn("hello", utterance_id=0), _turn("there", utterance_id=1), _turn("again", utterance_id=2)]
+    (data / "meld_train_dialogues.json").write_text(json.dumps({"0": duplicate}), encoding="utf-8")
+    (data / "meld_dev_dialogues.json").write_text(json.dumps({"0": duplicate}), encoding="utf-8")
     (data / "meld_test_dialogues.json").write_text(json.dumps({"0": [_turn("different")]}), encoding="utf-8")
-    with pytest.raises(ValueError, match="Exact duplicate dialogue content"):
+    with pytest.raises(ValueError, match="Exact duplicate multi-turn dialogue"):
         validator.validate_meld_splits(data, raw)
 
 def test_asr_scorer_reports_call_level_ci_and_rejects_empty_reference():
