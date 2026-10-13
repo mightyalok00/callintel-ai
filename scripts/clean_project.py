@@ -15,6 +15,7 @@ CACHE_PATTERNS = [
     ".mypy_cache",
     ".coverage",
     "htmlcov",
+    "callintel.db",
 ]
 
 
@@ -23,12 +24,12 @@ def clean_project():
     print(f"[*] Scanning {PROJECT_ROOT} for temporary cache artifacts...")
 
     for path in PROJECT_ROOT.rglob("*"):
-        # Never delete inside .venv
-        if ".venv" in path.parts:
+        # Never delete inside .venv or .git
+        if ".venv" in path.parts or ".git" in path.parts:
             continue
 
         is_egg_info = path.is_dir() and path.name.endswith(".egg-info")
-        if path.name in CACHE_PATTERNS or path.suffix in [".pyc", ".pyo"] or is_egg_info:
+        if path.name in CACHE_PATTERNS or path.suffix in [".pyc", ".pyo", ".log"] or is_egg_info:
             try:
                 if path.is_dir():
                     shutil.rmtree(path)
